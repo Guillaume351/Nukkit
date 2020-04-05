@@ -229,32 +229,34 @@ public class Anvil extends BaseLevelProvider {
 
     @Override
     public synchronized void saveChunk(int X, int Z) {
-        BaseFullChunk chunk = this.getChunk(X, Z);
-        if (chunk != null) {
-            try {
-                this.loadRegion(X >> 5, Z >> 5).writeChunk(chunk);
-            } catch (Exception e) {
-                throw new ChunkException("Error saving chunk (" + X + ", " + Z + ")", e);
-            }
-        }
+        return; //TODO : remove. prevent from saving
+//        BaseFullChunk chunk = this.getChunk(X, Z);
+//        if (chunk != null) {
+//            try {
+//                this.loadRegion(X >> 5, Z >> 5).writeChunk(chunk);
+//            } catch (Exception e) {
+//                throw new ChunkException("Error saving chunk (" + X + ", " + Z + ")", e);
+//            }
+//        }
     }
 
 
     @Override
     public synchronized void saveChunk(int x, int z, FullChunk chunk) {
-        if (!(chunk instanceof Chunk)) {
-            throw new ChunkException("Invalid Chunk class");
-        }
-        int regionX = x >> 5;
-        int regionZ = z >> 5;
-        this.loadRegion(regionX, regionZ);
-        chunk.setX(x);
-        chunk.setZ(z);
-        try {
-            this.getRegion(regionX, regionZ).writeChunk(chunk);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        return;//TODO :remvove
+//        if (!(chunk instanceof Chunk)) {
+//            throw new ChunkException("Invalid Chunk class");
+//        }
+//        int regionX = x >> 5;
+//        int regionZ = z >> 5;
+//        this.loadRegion(regionX, regionZ);
+//        chunk.setX(x);
+//        chunk.setZ(z);
+//        try {
+//            this.getRegion(regionX, regionZ).writeChunk(chunk);
+//        } catch (Exception e) {
+//            throw new RuntimeException(e);
+//        }
     }
 
     public static ChunkSection createChunkSection(int y) {

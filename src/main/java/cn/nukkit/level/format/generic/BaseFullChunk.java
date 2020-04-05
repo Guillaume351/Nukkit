@@ -409,7 +409,7 @@ public abstract class BaseFullChunk implements FullChunk, ChunkManager {
         if (provider == null) {
             return true;
         }
-        if (save && this.changes != 0) {
+        if (false && save && this.changes != 0) { //DISABLE SAVING
             provider.saveChunk(this.getX(), this.getZ());
         }
         if (safe) {
