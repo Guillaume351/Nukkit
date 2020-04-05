@@ -31,7 +31,7 @@ public abstract class Food {
             .addRelative(Item.GOLDEN_APPLE_ENCHANTED));
     public static final Food beef_raw = registerDefaultFood(new FoodNormal(3, 1.8F).addRelative(Item.RAW_BEEF));
     public static final Food beetroot = registerDefaultFood(new FoodNormal(1, 1.2F).addRelative(Item.BEETROOT));
-    public static final Food beetroot_soup = registerDefaultFood(new FoodNormal(6, 7.2F).addRelative(Item.BEETROOT_SOUP));
+    public static final Food beetroot_soup = registerDefaultFood(new FoodInBowl(6, 7.2F).addRelative(Item.BEETROOT_SOUP));
     public static final Food bread = registerDefaultFood(new FoodNormal(5, 6F).addRelative(Item.BREAD));
     public static final Food cake_slice = registerDefaultFood(new FoodNormal(2, 0.4F)
             .addRelative(Block.CAKE_BLOCK, 0).addRelative(Block.CAKE_BLOCK, 1).addRelative(Block.CAKE_BLOCK, 2)
@@ -43,7 +43,7 @@ public abstract class Food {
             .addChanceEffect(0.3F, Effect.getEffect(Effect.HUNGER).setDuration(30 * 20))
             .addRelative(Item.RAW_CHICKEN));
     public static final Food chicken_cooked = registerDefaultFood(new FoodNormal(6, 7.2F).addRelative(Item.COOKED_CHICKEN));
-    public static final Food chorus_fruit = registerDefaultFood(new FoodNormal(4, 2.4F));
+    public static final Food chorus_fruit = registerDefaultFood(new FoodChorusFruit());
     public static final Food cookie = registerDefaultFood(new FoodNormal(2, 0.4F).addRelative(Item.COOKIE));
     public static final Food melon_slice = registerDefaultFood(new FoodNormal(2, 1.2F).addRelative(Item.MELON_SLICE));
     public static final Food milk = registerDefaultFood(new FoodMilk().addRelative(Item.BUCKET, 1));
@@ -79,6 +79,8 @@ public abstract class Food {
             .addEffect(Effect.getEffect(Effect.NAUSEA).setAmplifier(1).setDuration(15 * 20))
             .addEffect(Effect.getEffect(Effect.POISON).setAmplifier(4).setDuration(60 * 20))
             .addRelative(Item.PUFFERFISH));
+    public static final Food dried_kelp = registerDefaultFood(new FoodNormal(1, 0.6F).addRelative(Item.DRIED_KELP));
+    public static final Food sweet_berries = registerDefaultFood(new FoodNormal(2, 0.4F).addRelative(Item.SWEET_BERRIES));
 
     //Opened API for plugins
     public static Food registerFood(Food food, Plugin plugin) {

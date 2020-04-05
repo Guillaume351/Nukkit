@@ -3,6 +3,7 @@ package cn.nukkit.command.defaults;
 import cn.nukkit.Player;
 import cn.nukkit.command.Command;
 import cn.nukkit.command.CommandSender;
+import cn.nukkit.command.data.CommandParamType;
 import cn.nukkit.command.data.CommandParameter;
 import cn.nukkit.lang.TranslationContainer;
 import cn.nukkit.utils.TextFormat;
@@ -17,8 +18,8 @@ public class XpCommand extends Command {
         this.setPermission("nukkit.command.xp");
         this.commandParameters.clear();
         this.commandParameters.put("default", new CommandParameter[]{
-                new CommandParameter("amount|level", CommandParameter.ARG_TYPE_INT, false),
-                new CommandParameter("player", CommandParameter.ARG_TYPE_TARGET, true)
+                new CommandParameter("amount|level", CommandParamType.INT, false),
+                new CommandParameter("player", CommandParamType.TARGET, true)
         });
     }
 
@@ -84,9 +85,9 @@ public class XpCommand extends Command {
                 player.setExperience(player.getExperience(), newLevel);
             }
             if (amount > 0) {
-                sender.sendMessage(new TranslationContainer("commands.xp.success.levels", new String[]{String.valueOf(amount), player.getName()}));
+                sender.sendMessage(new TranslationContainer("commands.xp.success.levels", String.valueOf(amount), player.getName()));
             } else {
-                sender.sendMessage(new TranslationContainer("commands.xp.success.levels.minus", new String[]{String.valueOf(-amount), player.getName()}));
+                sender.sendMessage(new TranslationContainer("commands.xp.success.levels.minus", String.valueOf(-amount), player.getName()));
             }
             return true;
         } else {
@@ -95,7 +96,7 @@ public class XpCommand extends Command {
                 return true;
             }
             player.addExperience(amount);
-            sender.sendMessage(new TranslationContainer("commands.xp.success", new String[]{String.valueOf(amount), player.getName()}));
+            sender.sendMessage(new TranslationContainer("commands.xp.success", String.valueOf(amount), player.getName()));
             return true;
         }
     }

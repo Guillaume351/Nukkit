@@ -8,6 +8,7 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.StringJoiner;
 
 public class ListTag<T extends Tag> extends Tag {
 
@@ -39,10 +40,11 @@ public class ListTag<T extends Tag> extends Tag {
         type = dis.readByte();
         int size = dis.readInt();
 
-        list = new ArrayList<>();
+        list = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             Tag tag = Tag.newTag(type, null);
             tag.load(dis);
+            tag.setName("");
             list.add((T) tag);
         }
     }
@@ -54,7 +56,9 @@ public class ListTag<T extends Tag> extends Tag {
 
     @Override
     public String toString() {
-        return "ListTag " + this.getName() + " [" + list.size() + " entries of type " + Tag.getTagName(type) + "]";
+        StringJoiner joiner = new StringJoiner(",\n\t");
+        list.forEach(tag -> joiner.add(tag.toString().replace("\n", "\n\t")));
+        return "ListTag '" + this.getName() + "' (" + list.size() + " entries of type " + Tag.getTagName(type) + ") {\n\t" + joiner.toString() + "\n}";
     }
 
     public void print(String prefix, PrintStream out) {
@@ -69,12 +73,14 @@ public class ListTag<T extends Tag> extends Tag {
 
     public ListTag<T> add(T tag) {
         type = tag.getId();
+        tag.setName("");
         list.add(tag);
         return this;
     }
 
     public ListTag<T> add(int index, T tag) {
         type = tag.getId();
+        tag.setName("");
 
         if (index >= list.size()) {
             list.add(index, tag);
@@ -82,6 +88,17 @@ public class ListTag<T extends Tag> extends Tag {
             list.set(index, tag);
         }
         return this;
+    }
+
+    @Override
+    public List<Object> parseValue() {
+        List<Object> value = new ArrayList<>(this.list.size());
+
+        for (T t : this.list) {
+            value.add(t.parseValue());
+        }
+
+        return value;
     }
 
     public T get(int index) {

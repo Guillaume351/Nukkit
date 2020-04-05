@@ -8,16 +8,17 @@ import cn.nukkit.utils.BlockColor;
 
 /**
  * author: MagicDroidX
+ * AMAZING COARSE DIRT added by kvetinac97
  * Nukkit Project
  */
-public class BlockDirt extends BlockSolid {
+public class BlockDirt extends BlockSolidMeta {
 
     public BlockDirt() {
         this(0);
     }
 
-    public BlockDirt(int meta) {
-        super(0);
+    public BlockDirt(int meta){
+        super(meta);
     }
 
     @Override
@@ -47,19 +48,14 @@ public class BlockDirt extends BlockSolid {
 
     @Override
     public String getName() {
-        return "Dirt";
-    }
-
-    @Override
-    public boolean onActivate(Item item) {
-        return this.onActivate(item, null);
+        return this.getDamage() == 0 ? "Dirt" : "Coarse Dirt";
     }
 
     @Override
     public boolean onActivate(Item item, Player player) {
         if (item.isHoe()) {
             item.useOn(this);
-            this.getLevel().setBlock(this, new BlockFarmland(), true);
+            this.getLevel().setBlock(this, this.getDamage() == 0 ? get(FARMLAND) : get(DIRT), true);
 
             return true;
         }
@@ -69,12 +65,11 @@ public class BlockDirt extends BlockSolid {
 
     @Override
     public Item[] getDrops(Item item) {
-        return new Item[]{new ItemBlock(new BlockDirt())};
+        return new Item[]{new ItemBlock(Block.get(BlockID.DIRT))};
     }
 
     @Override
     public BlockColor getColor() {
         return BlockColor.DIRT_BLOCK_COLOR;
     }
-
 }

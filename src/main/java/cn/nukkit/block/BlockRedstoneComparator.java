@@ -6,10 +6,11 @@ import cn.nukkit.blockentity.BlockEntityComparator;
 import cn.nukkit.item.Item;
 import cn.nukkit.item.ItemRedstoneComparator;
 import cn.nukkit.level.Level;
-import cn.nukkit.level.sound.ClickSound;
+import cn.nukkit.level.Sound;
 import cn.nukkit.math.BlockFace;
 import cn.nukkit.nbt.tag.CompoundTag;
 import cn.nukkit.nbt.tag.ListTag;
+import cn.nukkit.utils.BlockColor;
 
 /**
  * @author CreeperFace
@@ -31,21 +32,21 @@ public abstract class BlockRedstoneComparator extends BlockRedstoneDiode {
 
     @Override
     public BlockFace getFacing() {
-        return BlockFace.fromHorizontalIndex(this.meta);
+        return BlockFace.fromHorizontalIndex(this.getDamage());
     }
 
     public Mode getMode() {
-        return (meta & 4) > 0 ? Mode.SUBTRACT : Mode.COMPARE;
+        return (getDamage() & 4) > 0 ? Mode.SUBTRACT : Mode.COMPARE;
     }
 
     @Override
     protected BlockRedstoneComparator getUnpowered() {
-        return new BlockRedstoneComparatorUnpowered(this.meta);
+        return (BlockRedstoneComparator) Block.get(BlockID.UNPOWERED_COMPARATOR, this.getDamage());
     }
 
     @Override
     protected BlockRedstoneComparator getPowered() {
-        return new BlockRedstoneComparatorPowered(this.meta);
+        return (BlockRedstoneComparator) Block.get(BlockID.POWERED_COMPARATOR, this.getDamage());
     }
 
     @Override
@@ -57,7 +58,7 @@ public abstract class BlockRedstoneComparator extends BlockRedstoneDiode {
 
     @Override
     public void updateState() {
-        if (!this.level.isUpdateScheduled(this, this)) {
+        if (!this.level.isBlockTickPending(this, this)) {
             int output = this.calculateOutput();
             BlockEntity blockEntity = this.level.getBlockEntity(this);
             int power = blockEntity instanceof BlockEntityComparator ? ((BlockEntityComparator) blockEntity).getOutputSignal() : 0;
@@ -69,6 +70,7 @@ public abstract class BlockRedstoneComparator extends BlockRedstoneDiode {
                     this.level.scheduleUpdate(this, this, 2, 0);
                 }*/
 
+                //System.out.println("schedule update 0");
                 this.level.scheduleUpdate(this, this, 2);
             }
         }
@@ -112,12 +114,12 @@ public abstract class BlockRedstoneComparator extends BlockRedstoneDiode {
     @Override
     public boolean onActivate(Item item, Player player) {
         if (getMode() == Mode.SUBTRACT) {
-            this.meta -= 4;
+            this.setDamage(this.getDamage() - 4);
         } else {
-            this.meta += 4;
+            this.setDamage(this.getDamage() + 4);
         }
 
-        this.level.addSound(new ClickSound(this, getMode() == Mode.SUBTRACT ? 0.55F : 0.5F));
+        this.level.addSound(this, Sound.RANDOM_CLICK, 1, getMode() == Mode.SUBTRACT ? 0.55F : 0.5F);
         this.level.setBlock(this, this, true, false);
         //bug?
 
@@ -169,8 +171,10 @@ public abstract class BlockRedstoneComparator extends BlockRedstoneDiode {
                     .putInt("x", (int) this.x)
                     .putInt("y", (int) this.y)
                     .putInt("z", (int) this.z);
-            new BlockEntityComparator(this.level.getChunk((int) this.x >> 4, (int) this.z >> 4), nbt);
-
+            BlockEntityComparator comparator = (BlockEntityComparator) BlockEntity.createBlockEntity(BlockEntity.COMPARATOR, this.level.getChunk((int) this.x >> 4, (int) this.z >> 4), nbt);
+            if (comparator == null) {
+                return false;
+            }
             onUpdate(Level.BLOCK_UPDATE_REDSTONE);
             return true;
         }
@@ -180,7 +184,7 @@ public abstract class BlockRedstoneComparator extends BlockRedstoneDiode {
 
     @Override
     public boolean isPowered() {
-        return this.isPowered || (this.meta & 8) > 0;
+        return this.isPowered || (this.getDamage() & 8) > 0;
     }
 
     @Override
@@ -191,5 +195,10 @@ public abstract class BlockRedstoneComparator extends BlockRedstoneDiode {
     public enum Mode {
         COMPARE,
         SUBTRACT
+    }
+
+    @Override
+    public BlockColor getColor() {
+        return BlockColor.AIR_BLOCK_COLOR;
     }
 }

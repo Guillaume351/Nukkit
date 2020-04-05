@@ -6,7 +6,7 @@ import cn.nukkit.network.protocol.ClientboundMapItemDataPacket;
 import cn.nukkit.utils.MainLogger;
 
 import javax.imageio.ImageIO;
-import java.awt.*;
+import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -19,6 +19,9 @@ import java.io.IOException;
 public class ItemMap extends Item {
 
     public static int mapCount = 0;
+
+    // not very pretty but definitely better than before.
+    private BufferedImage image;
 
     public ItemMap() {
         this(0, 1);
@@ -33,7 +36,7 @@ public class ItemMap extends Item {
 
         if (!hasCompoundTag() || !getNamedTag().contains("map_uuid")) {
             CompoundTag tag = new CompoundTag();
-            tag.putString("map_uuid", "" + mapCount++);
+            tag.putLong("map_uuid", mapCount++);
             this.setNamedTag(tag);
         }
     }
@@ -42,19 +45,19 @@ public class ItemMap extends Item {
         setImage(ImageIO.read(file));
     }
 
-    public void setImage(BufferedImage img) {
+    public void setImage(BufferedImage image) {
         try {
-            BufferedImage image = img;
-
-            if (img.getHeight() != 128 || img.getWidth() != 128) { //resize
-                image = new BufferedImage(128, 128, img.getType());
-                Graphics2D g = image.createGraphics();
-                g.drawImage(img, 0, 0, 128, 128, null);
+            if (image.getHeight() != 128 || image.getWidth() != 128) { //resize
+                this.image = new BufferedImage(128, 128, image.getType());
+                Graphics2D g = this.image.createGraphics();
+                g.drawImage(image, 0, 0, 128, 128, null);
                 g.dispose();
+            } else {
+                this.image = image;
             }
 
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            ImageIO.write(image, "png", baos);
+            ImageIO.write(this.image, "png", baos);
 
             this.getNamedTag().putByteArray("Colors", baos.toByteArray());
         } catch (IOException e) {
@@ -65,7 +68,8 @@ public class ItemMap extends Item {
     protected BufferedImage loadImageFromNBT() {
         try {
             byte[] data = getNamedTag().getByteArray("Colors");
-            return ImageIO.read(new ByteArrayInputStream(data));
+            image = ImageIO.read(new ByteArrayInputStream(data));
+            return image;
         } catch (IOException e) {
             MainLogger.getLogger().logException(e);
         }
@@ -74,11 +78,12 @@ public class ItemMap extends Item {
     }
 
     public long getMapId() {
-        return Long.valueOf(getNamedTag().getString("map_uuid"));
+        return getNamedTag().getLong("map_uuid");
     }
 
     public void sendImage(Player p) {
-        BufferedImage image = loadImageFromNBT();
+        // don't load the image from NBT if it has been done before.
+        BufferedImage image = this.image != null ? this.image : loadImageFromNBT();
 
         ClientboundMapItemDataPacket pk = new ClientboundMapItemDataPacket();
         pk.mapId = getMapId();

@@ -1,10 +1,12 @@
 package cn.nukkit.network.protocol;
 
 import cn.nukkit.math.BlockVector3;
+import lombok.ToString;
 
 /**
  * @author Nukkit Project Team
  */
+@ToString
 public class PlayerActionPacket extends DataPacket {
 
     public static final byte NETWORK_ID = ProtocolInfo.PLAYER_ACTION_PACKET;
@@ -28,6 +30,11 @@ public class PlayerActionPacket extends DataPacket {
     public static final int ACTION_STOP_GLIDE = 16;
     public static final int ACTION_BUILD_DENIED = 17;
     public static final int ACTION_CONTINUE_BREAK = 18;
+    public static final int ACTION_SET_ENCHANTMENT_SEED = 20;
+    public static final int ACTION_START_SWIMMING = 21;
+    public static final int ACTION_STOP_SWIMMING = 22;
+    public static final int ACTION_START_SPIN_ATTACK = 23;
+    public static final int ACTION_STOP_SPIN_ATTACK = 24;
 
     public long entityId;
     public int action;

@@ -11,20 +11,24 @@ import cn.nukkit.nbt.tag.CompoundTag;
 public class BlockEntityFlowerPot extends BlockEntitySpawnable {
     public BlockEntityFlowerPot(FullChunk chunk, CompoundTag nbt) {
         super(chunk, nbt);
-        if (!nbt.contains("item")) {
-            nbt.putShort("item", 0);
+    }
+
+    @Override
+    protected void initBlockEntity() {
+        if (!namedTag.contains("item")) {
+            namedTag.putShort("item", 0);
         }
 
-        if (!nbt.contains("data")) {
-            if (nbt.contains("mData")) {
-                nbt.putInt("data", nbt.getInt("mData"));
-                nbt.remove("mData");
+        if (!namedTag.contains("data")) {
+            if (namedTag.contains("mData")) {
+                namedTag.putInt("data", namedTag.getInt("mData"));
+                namedTag.remove("mData");
             } else {
-                nbt.putInt("data", 0);
+                namedTag.putInt("data", 0);
             }
         }
 
-        this.namedTag = nbt;
+        super.initBlockEntity();
     }
 
     @Override
@@ -35,13 +39,18 @@ public class BlockEntityFlowerPot extends BlockEntitySpawnable {
 
     @Override
     public CompoundTag getSpawnCompound() {
-        return new CompoundTag()
+        CompoundTag tag = new CompoundTag()
                 .putString("id", BlockEntity.FLOWER_POT)
                 .putInt("x", (int) this.x)
                 .putInt("y", (int) this.y)
-                .putInt("z", (int) this.z)
-                .putShort("item", this.namedTag.getShort("item"))
-                .putInt("mData", this.namedTag.getInt("data"));
+                .putInt("z", (int) this.z);
+
+        int item = namedTag.getShort("item");
+        if (item != Block.AIR) {
+            tag.putShort("item", this.namedTag.getShort("item"))
+                    .putInt("mData", this.namedTag.getInt("data"));
+        }
+        return tag;
     }
 
 }

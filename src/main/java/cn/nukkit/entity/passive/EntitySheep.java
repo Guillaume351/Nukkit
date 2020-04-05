@@ -6,15 +6,14 @@ import cn.nukkit.event.entity.EntityDamageByEntityEvent;
 import cn.nukkit.item.Item;
 import cn.nukkit.item.ItemDye;
 import cn.nukkit.level.format.FullChunk;
+import cn.nukkit.math.Vector3;
 import cn.nukkit.nbt.tag.CompoundTag;
-import cn.nukkit.network.protocol.AddEntityPacket;
 import cn.nukkit.utils.DyeColor;
 
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Author: BeYkeRYkt
- * Nukkit Project
+ * Author: BeYkeRYkt Nukkit Project
  */
 public class EntitySheep extends EntityAnimal {
 
@@ -44,16 +43,8 @@ public class EntitySheep extends EntityAnimal {
     }
 
     @Override
-    public float getEyeHeight() {
-        if (isBaby()) {
-            return 0.65f;
-        }
-        return 1.1f;
-    }
-
-    @Override
     public String getName() {
-        return this.getNameTag();
+        return "Sheep";
     }
 
     @Override
@@ -89,7 +80,7 @@ public class EntitySheep extends EntityAnimal {
     }
 
     @Override
-    public boolean onInteract(Player player, Item item) {
+    public boolean onInteract(Player player, Item item, Vector3 clickedPos) {
         if (item.getId() == Item.DYE) {
             this.setColor(((ItemDye) item).getDyeColor().getWoolData());
             return true;
@@ -106,7 +97,7 @@ public class EntitySheep extends EntityAnimal {
         this.sheared = true;
         this.setDataFlag(DATA_FLAGS, DATA_FLAG_SHEARED, true);
 
-        this.level.dropItem(this, Item.get(Item.WOOL, getColor(), this.level.rand.nextInt(2) + 1));
+        this.level.dropItem(this, Item.get(Item.WOOL, getColor(), ThreadLocalRandom.current().nextInt(2) + 1));
         return true;
     }
 
@@ -141,23 +132,5 @@ public class EntitySheep extends EntityAnimal {
         }
 
         return DyeColor.WHITE.getWoolData();
-    }
-
-    @Override
-    public void spawnTo(Player player) {
-        AddEntityPacket pk = new AddEntityPacket();
-        pk.type = this.getNetworkId();
-        pk.entityUniqueId = this.getId();
-        pk.entityRuntimeId = this.getId();
-        pk.x = (float) this.x;
-        pk.y = (float) this.y;
-        pk.z = (float) this.z;
-        pk.speedX = (float) this.motionX;
-        pk.speedY = (float) this.motionY;
-        pk.speedZ = (float) this.motionZ;
-        pk.metadata = this.dataProperties;
-        player.dataPacket(pk);
-
-        super.spawnTo(player);
     }
 }

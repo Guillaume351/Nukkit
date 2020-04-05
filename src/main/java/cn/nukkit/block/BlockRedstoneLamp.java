@@ -1,23 +1,20 @@
 package cn.nukkit.block;
 
 import cn.nukkit.Player;
+import cn.nukkit.event.redstone.RedstoneUpdateEvent;
 import cn.nukkit.item.Item;
 import cn.nukkit.item.ItemBlock;
 import cn.nukkit.item.ItemTool;
 import cn.nukkit.level.Level;
 import cn.nukkit.math.BlockFace;
+import cn.nukkit.utils.BlockColor;
 
 /**
  * @author Nukkit Project Team
  */
 public class BlockRedstoneLamp extends BlockSolid {
 
-    public BlockRedstoneLamp(int meta) {
-        super(meta);
-    }
-
     public BlockRedstoneLamp() {
-        this(0);
     }
 
     @Override
@@ -47,8 +44,8 @@ public class BlockRedstoneLamp extends BlockSolid {
 
     @Override
     public boolean place(Item item, Block block, Block target, BlockFace face, double fx, double fy, double fz, Player player) {
-        if (this.level.isBlockPowered(this)) {
-            this.level.setBlock(this, new BlockRedstoneLampLit(), false, true);
+        if (this.level.isBlockPowered(this.getLocation())) {
+            this.level.setBlock(this, Block.get(BlockID.LIT_REDSTONE_LAMP), false, true);
         } else {
             this.level.setBlock(this, this, false, true);
         }
@@ -58,8 +55,14 @@ public class BlockRedstoneLamp extends BlockSolid {
     @Override
     public int onUpdate(int type) {
         if (type == Level.BLOCK_UPDATE_NORMAL || type == Level.BLOCK_UPDATE_REDSTONE) {
-            if (this.level.isBlockPowered(this)) {
-                this.level.setBlock(this, new BlockRedstoneLampLit(), false, false);
+            // Redstone event
+            RedstoneUpdateEvent ev = new RedstoneUpdateEvent(this);
+            getLevel().getServer().getPluginManager().callEvent(ev);
+            if (ev.isCancelled()) {
+                return 0;
+            }
+            if (this.level.isBlockPowered(this.getLocation())) {
+                this.level.setBlock(this, Block.get(BlockID.LIT_REDSTONE_LAMP), false, false);
                 return 1;
             }
         }
@@ -70,8 +73,12 @@ public class BlockRedstoneLamp extends BlockSolid {
     @Override
     public Item[] getDrops(Item item) {
         return new Item[]{
-                new ItemBlock(new BlockRedstoneLamp())
+                new ItemBlock(Block.get(BlockID.REDSTONE_LAMP))
         };
     }
 
+    @Override
+    public BlockColor getColor() {
+        return BlockColor.AIR_BLOCK_COLOR;
+    }
 }

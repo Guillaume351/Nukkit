@@ -15,11 +15,6 @@ import java.util.concurrent.ThreadLocalRandom;
 public class BlockOreEmerald extends BlockSolid {
 
     public BlockOreEmerald() {
-        this(0);
-    }
-
-    public BlockOreEmerald(int meta) {
-        super(0);
     }
 
     @Override
@@ -78,5 +73,10 @@ public class BlockOreEmerald extends BlockSolid {
     @Override
     public boolean canHarvestWithHand() {
         return false;
+    }
+
+    @Override
+    public boolean canSilkTouch() {
+        return true;
     }
 }

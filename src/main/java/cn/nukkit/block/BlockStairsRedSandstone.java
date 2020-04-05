@@ -3,6 +3,7 @@ package cn.nukkit.block;
 import cn.nukkit.item.Item;
 import cn.nukkit.item.ItemBlock;
 import cn.nukkit.item.ItemTool;
+import cn.nukkit.utils.BlockColor;
 
 /**
  * Created by CreeperFace on 26. 11. 2016.
@@ -55,11 +56,16 @@ public class BlockStairsRedSandstone extends BlockStairs {
 
     @Override
     public Item toItem() {
-        return new ItemBlock(this, this.meta & 0x07);
+        return new ItemBlock(this, this.getDamage() & 0x07);
     }
 
     @Override
     public boolean canHarvestWithHand() {
         return false;
+    }
+
+    @Override
+    public BlockColor getColor() {
+        return BlockColor.ORANGE_BLOCK_COLOR;
     }
 }

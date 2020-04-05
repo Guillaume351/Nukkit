@@ -4,10 +4,10 @@ import cn.nukkit.Server;
 import cn.nukkit.block.*;
 import cn.nukkit.level.ChunkManager;
 import cn.nukkit.level.format.FullChunk;
-import cn.nukkit.level.generator.biome.Biome;
+import cn.nukkit.level.format.generic.BaseFullChunk;
 import cn.nukkit.level.generator.object.ore.OreType;
-import cn.nukkit.level.generator.populator.Populator;
-import cn.nukkit.level.generator.populator.PopulatorOre;
+import cn.nukkit.level.generator.populator.type.Populator;
+import cn.nukkit.level.generator.populator.impl.PopulatorOre;
 import cn.nukkit.math.NukkitRandom;
 import cn.nukkit.math.Vector3;
 
@@ -72,14 +72,14 @@ public class Flat extends Generator {
         if (this.options.containsKey("decoration")) {
             PopulatorOre ores = new PopulatorOre();
             ores.setOreTypes(new OreType[]{
-                    new OreType(new BlockOreCoal(), 20, 16, 0, 128),
-                    new OreType(new BlockOreIron(), 20, 8, 0, 64),
-                    new OreType(new BlockOreRedstone(), 8, 7, 0, 16),
-                    new OreType(new BlockOreLapis(), 1, 6, 0, 32),
-                    new OreType(new BlockOreGold(), 2, 8, 0, 32),
-                    new OreType(new BlockOreDiamond(), 1, 7, 0, 16),
-                    new OreType(new BlockDirt(), 20, 32, 0, 128),
-                    new OreType(new BlockGravel(), 20, 16, 0, 128),
+                    new OreType(Block.get(BlockID.COAL_ORE), 20, 16, 0, 128),
+                    new OreType(Block.get(BlockID.IRON_ORE), 20, 8, 0, 64),
+                    new OreType(Block.get(BlockID.REDSTONE_ORE), 8, 7, 0, 16),
+                    new OreType(Block.get(BlockID.LAPIS_ORE), 1, 6, 0, 32),
+                    new OreType(Block.get(BlockID.GOLD_ORE), 2, 8, 0, 32),
+                    new OreType(Block.get(BlockID.DIAMOND_ORE), 1, 7, 0, 16),
+                    new OreType(Block.get(BlockID.DIRT), 20, 32, 0, 128),
+                    new OreType(Block.get(BlockID.GRAVEL), 20, 16, 0, 128),
             });
             this.populators.add(ores);
         }
@@ -162,21 +162,16 @@ public class Flat extends Generator {
                 this.parsePreset(this.preset, chunkX, chunkZ);
             }
         }
-        FullChunk chunk = this.level.getChunk(chunkX, chunkZ);
-        this.generateChunk(chunk);
+        this.generateChunk(level.getChunk(chunkX, chunkZ));
     }
 
     private void generateChunk(FullChunk chunk) {
         chunk.setGenerated();
-        int c = Biome.getBiome(biome).getColor();
-        int R = c >> 16;
-        int G = (c >> 8) & 0xff;
-        int B = c & 0xff;
 
         for (int Z = 0; Z < 16; ++Z) {
             for (int X = 0; X < 16; ++X) {
                 chunk.setBiomeId(X, Z, biome);
-                chunk.setBiomeColor(X, Z, R, G, B);
+
                 for (int y = 0; y < 256; ++y) {
                     int k = this.structure[y][0];
                     int l = this.structure[y][1];
@@ -188,9 +183,10 @@ public class Flat extends Generator {
 
     @Override
     public void populateChunk(int chunkX, int chunkZ) {
+        BaseFullChunk chunk = level.getChunk(chunkX, chunkZ);
         this.random.setSeed(0xdeadbeef ^ (chunkX << 8) ^ chunkZ ^ this.level.getSeed());
         for (Populator populator : this.populators) {
-            populator.populate(this.level, chunkX, chunkZ, this.random);
+            populator.populate(this.level, chunkX, chunkZ, this.random, chunk);
         }
     }
 

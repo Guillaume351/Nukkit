@@ -21,6 +21,8 @@ public interface LoginChainData {
 
     int getDeviceOS();
 
+    String getDeviceId();
+
     String getGameVersion();
 
     int getGuiScale();
@@ -28,6 +30,8 @@ public interface LoginChainData {
     String getLanguageCode();
 
     String getXUID();
+
+    boolean isXboxAuthed();
 
     int getCurrentInputMode();
 

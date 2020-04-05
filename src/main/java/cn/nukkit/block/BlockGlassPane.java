@@ -10,11 +10,6 @@ import cn.nukkit.utils.BlockColor;
 public class BlockGlassPane extends BlockThin {
 
     public BlockGlassPane() {
-        this(0);
-    }
-
-    public BlockGlassPane(int meta) {
-        super(meta);
     }
 
     @Override
@@ -45,5 +40,10 @@ public class BlockGlassPane extends BlockThin {
     @Override
     public BlockColor getColor() {
         return BlockColor.AIR_BLOCK_COLOR;
+    }
+
+    @Override
+    public boolean canSilkTouch() {
+        return true;
     }
 }

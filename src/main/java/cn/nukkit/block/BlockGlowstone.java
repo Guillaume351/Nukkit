@@ -14,11 +14,6 @@ import java.util.Random;
  */
 public class BlockGlowstone extends BlockTransparent {
     public BlockGlowstone() {
-        this(0);
-    }
-
-    public BlockGlowstone(int meta) {
-        super(0);
     }
 
     @Override
@@ -63,6 +58,11 @@ public class BlockGlowstone extends BlockTransparent {
 
     @Override
     public BlockColor getColor() {
-        return BlockColor.AIR_BLOCK_COLOR;
+        return BlockColor.SAND_BLOCK_COLOR;
+    }
+
+    @Override
+    public boolean canSilkTouch() {
+        return true;
     }
 }

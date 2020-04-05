@@ -1,7 +1,9 @@
 package cn.nukkit.network.protocol;
 
 import cn.nukkit.resourcepacks.ResourcePack;
+import lombok.ToString;
 
+@ToString
 public class ResourcePackStackPacket extends DataPacket {
 
     public static final byte NETWORK_ID = ProtocolInfo.RESOURCE_PACK_STACK_PACKET;
@@ -9,6 +11,8 @@ public class ResourcePackStackPacket extends DataPacket {
     public boolean mustAccept = false;
     public ResourcePack[] behaviourPackStack = new ResourcePack[0];
     public ResourcePack[] resourcePackStack = new ResourcePack[0];
+    public boolean isExperimental = false;
+    public String gameVersion = ProtocolInfo.MINECRAFT_VERSION_NETWORK;
 
     @Override
     public void decode() {
@@ -22,15 +26,19 @@ public class ResourcePackStackPacket extends DataPacket {
 
         this.putUnsignedVarInt(this.behaviourPackStack.length);
         for (ResourcePack entry : this.behaviourPackStack) {
-            this.putString(entry.getPackId());
+            this.putString(entry.getPackId().toString());
             this.putString(entry.getPackVersion());
+            this.putString(""); //TODO: subpack name
         }
 
         this.putUnsignedVarInt(this.resourcePackStack.length);
         for (ResourcePack entry : this.resourcePackStack) {
-            this.putString(entry.getPackId());
+            this.putString(entry.getPackId().toString());
             this.putString(entry.getPackVersion());
+            this.putString(""); //TODO: subpack name
         }
+        this.putBoolean(this.isExperimental);
+        this.putString(this.gameVersion);
     }
 
     @Override

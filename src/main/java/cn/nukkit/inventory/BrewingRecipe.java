@@ -1,59 +1,22 @@
 package cn.nukkit.inventory;
 
 
-import cn.nukkit.Server;
 import cn.nukkit.item.Item;
 
-import java.util.UUID;
 
-public class BrewingRecipe implements Recipe {
-    private UUID id;
+public class BrewingRecipe extends MixRecipe {
 
-    private final Item output;
-
-    private final Item potion;
-
-    private Item ingredient;
-
-    public BrewingRecipe(Item result, Item ingredient, Item potion) {
-        this.output = result.clone();
-        this.ingredient = ingredient.clone();
-        this.potion = potion.clone();
+    public BrewingRecipe(Item input, Item ingredient, Item output) {
+        super(input, ingredient, output);
     }
 
     @Override
-    public UUID getId() {
-        return id;
+    public void registerToCraftingManager(CraftingManager manager) {
+        manager.registerBrewingRecipe(this);
     }
 
     @Override
-    public void setId(UUID uuid) {
-        if (id != null) {
-            throw new IllegalStateException("Id is already set");
-        }
-
-        this.id = uuid;
-    }
-
-    public void setInput(Item item) {
-        ingredient = item.clone();
-    }
-
-    public Item getInput() {
-        return ingredient.clone();
-    }
-
-    public Item getPotion() {
-        return potion.clone();
-    }
-
-    @Override
-    public Item getResult() {
-        return output.clone();
-    }
-
-    @Override
-    public void registerToCraftingManager() {
-        Server.getInstance().getCraftingManager().registerBrewingRecipe(this);
+    public RecipeType getType() {
+        throw new UnsupportedOperationException();
     }
 }

@@ -7,7 +7,6 @@ import cn.nukkit.entity.data.EntityMetadata;
 import cn.nukkit.entity.mob.EntityCreeper;
 import cn.nukkit.network.protocol.*;
 
-import java.awt.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -24,7 +23,7 @@ public class DummyBossBar {
 
     private String text;
     private float length;
-    private Color color;
+    private BlockColor color;
 
     private DummyBossBar(Builder builder) {
         this.player = builder.player;
@@ -40,7 +39,7 @@ public class DummyBossBar {
 
         private String text = "";
         private float length = 100;
-        private Color color = null;
+        private BlockColor color = null;
 
         public Builder(Player player) {
             this.player = player;
@@ -57,13 +56,13 @@ public class DummyBossBar {
             return this;
         }
 
-        public Builder color(Color color) {
+        public Builder color(BlockColor color) {
             this.color = color;
             return this;
         }
 
         public Builder color(int red, int green, int blue) {
-            return color(new Color(red, green, blue));
+            return color(new BlockColor(red, green, blue));
         }
 
         public DummyBossBar build() {
@@ -99,6 +98,7 @@ public class DummyBossBar {
         if (this.length != length) {
             this.length = length;
             this.sendAttributes();
+            this.sendSetBossBarLength();
         }
     }
 
@@ -106,7 +106,7 @@ public class DummyBossBar {
      * Color is not working in the current version. We are keep waiting for client support.
      * @param color the boss bar color
      */
-    public void setColor(Color color) {
+    public void setColor(BlockColor color) {
         if (this.color == null || !this.color.equals(color)) {
             this.color = color;
             this.sendSetBossBarTexture();
@@ -114,14 +114,14 @@ public class DummyBossBar {
     }
 
     public void setColor(int red, int green, int blue) {
-        this.setColor(new Color(red, green, blue));
+        this.setColor(new BlockColor(red, green, blue));
     }
 
     public int getMixedColor() {
         return this.color.getRGB();//(this.color.getRed() << 16 | this.color.getGreen() << 8 | this.color.getBlue()) & 0xffffff;
     }
 
-    public Color getColor() {
+    public BlockColor getColor() {
         return this.color;
     }
 
@@ -163,7 +163,7 @@ public class DummyBossBar {
         pkBoss.bossEid = bossBarId;
         pkBoss.type = BossEventPacket.TYPE_SHOW;
         pkBoss.title = text;
-        pkBoss.healthPercent = this.length;
+        pkBoss.healthPercent = this.length / 100;
         player.dataPacket(pkBoss);
     }
 
@@ -187,7 +187,15 @@ public class DummyBossBar {
         pkBoss.bossEid = bossBarId;
         pkBoss.type = BossEventPacket.TYPE_TITLE;
         pkBoss.title = text;
-        pkBoss.healthPercent = this.length;
+        pkBoss.healthPercent = this.length / 100;
+        player.dataPacket(pkBoss);
+    }
+
+    private void sendSetBossBarLength() {
+        BossEventPacket pkBoss = new BossEventPacket();
+        pkBoss.bossEid = bossBarId;
+        pkBoss.type = BossEventPacket.TYPE_HEALTH_PERCENT;
+        pkBoss.healthPercent = this.length / 100;
         player.dataPacket(pkBoss);
     }
 
@@ -196,7 +204,7 @@ public class DummyBossBar {
      * Update boss entity's position when teleport and each 5s.
      */
     public void updateBossEntityPosition() {
-        MoveEntityPacket pk = new MoveEntityPacket();
+        MoveEntityAbsolutePacket pk = new MoveEntityAbsolutePacket();
         pk.eid = this.bossBarId;
         pk.x = this.player.x;
         pk.y = -10;
@@ -224,6 +232,7 @@ public class DummyBossBar {
         createBossEntity();
         sendAttributes();
         sendShowBossBar();
+        sendSetBossBarLength();
         if (color != null) this.sendSetBossBarTexture();
     }
 
@@ -233,6 +242,7 @@ public class DummyBossBar {
     public void reshow() {
         updateBossEntityPosition();
         sendShowBossBar();
+        sendSetBossBarLength();
     }
 
     public void destroy() {

@@ -1,6 +1,7 @@
 package cn.nukkit.network.protocol;
 
 import cn.nukkit.utils.Utils;
+import lombok.ToString;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -8,6 +9,7 @@ import java.awt.image.BufferedImage;
 /**
  * Created by CreeperFace on 5.3.2017.
  */
+@ToString
 public class ClientboundMapItemDataPacket extends DataPacket { //TODO: update to 1.2
 
     public int[] eids = new int[0];
@@ -15,6 +17,7 @@ public class ClientboundMapItemDataPacket extends DataPacket { //TODO: update to
     public long mapId;
     public int update;
     public byte scale;
+    public boolean isLocked;
     public int width;
     public int height;
     public int offsetX;
@@ -60,6 +63,7 @@ public class ClientboundMapItemDataPacket extends DataPacket { //TODO: update to
 
         this.putUnsignedVarInt(update);
         this.putByte(this.dimensionId);
+        this.putBoolean(this.isLocked);
 
         if ((update & 0x08) != 0) { //TODO: find out what these are for
             this.putUnsignedVarInt(eids.length);
@@ -95,12 +99,7 @@ public class ClientboundMapItemDataPacket extends DataPacket { //TODO: update to
             if (image != null) {
                 for (int y = 0; y < width; y++) {
                     for (int x = 0; x < height; x++) {
-                        Color color = new Color(image.getRGB(x, y), true);
-                        byte red = (byte) color.getRed();
-                        byte green = (byte) color.getGreen();
-                        byte blue = (byte) color.getBlue();
-
-                        putUnsignedVarInt(Utils.toRGB(red, green, blue, (byte) 0xff));
+                        putUnsignedVarInt(Utils.toABGR(this.image.getRGB(x, y)));
                     }
                 }
 
@@ -113,7 +112,7 @@ public class ClientboundMapItemDataPacket extends DataPacket { //TODO: update to
         }
     }
 
-    public class MapDecorator {
+    public static class MapDecorator {
         public byte rotation;
         public byte icon;
         public byte offsetX;

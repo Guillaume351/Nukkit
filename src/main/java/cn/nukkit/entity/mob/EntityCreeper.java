@@ -1,6 +1,5 @@
 package cn.nukkit.entity.mob;
 
-import cn.nukkit.Player;
 import cn.nukkit.entity.Entity;
 import cn.nukkit.entity.data.ByteEntityData;
 import cn.nukkit.entity.weather.EntityLightningStrike;
@@ -9,7 +8,8 @@ import cn.nukkit.event.entity.EntityDamageByEntityEvent;
 import cn.nukkit.item.Item;
 import cn.nukkit.level.format.FullChunk;
 import cn.nukkit.nbt.tag.CompoundTag;
-import cn.nukkit.network.protocol.AddEntityPacket;
+
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * @author Box.
@@ -30,12 +30,12 @@ public class EntityCreeper extends EntityMob {
 
     @Override
     public float getWidth() {
-        return 0.72f;
+        return 0.6f;
     }
 
     @Override
     public float getHeight() {
-        return 1.8f;
+        return 1.7f;
     }
 
     public EntityCreeper(FullChunk chunk, CompoundTag nbt) {
@@ -81,28 +81,15 @@ public class EntityCreeper extends EntityMob {
     }
 
     @Override
-    public Item[] getDrops() {
-        if (this.lastDamageCause instanceof EntityDamageByEntityEvent) {
-            return new Item[]{Item.get(Item.GUNPOWDER, level.rand.nextInt(2) + 1)};
-        }
-        return new Item[0];
+    public String getName() {
+        return "Creeper";
     }
 
     @Override
-    public void spawnTo(Player player) {
-        AddEntityPacket pk = new AddEntityPacket();
-        pk.type = this.getNetworkId();
-        pk.entityUniqueId = this.getId();
-        pk.entityRuntimeId = this.getId();
-        pk.x = (float) this.x;
-        pk.y = (float) this.y;
-        pk.z = (float) this.z;
-        pk.speedX = (float) this.motionX;
-        pk.speedY = (float) this.motionY;
-        pk.speedZ = (float) this.motionZ;
-        pk.metadata = this.dataProperties;
-        player.dataPacket(pk);
-
-        super.spawnTo(player);
+    public Item[] getDrops() {
+        if (this.lastDamageCause instanceof EntityDamageByEntityEvent) {
+            return new Item[]{Item.get(Item.GUNPOWDER, ThreadLocalRandom.current().nextInt(2) + 1)};
+        }
+        return new Item[0];
     }
 }

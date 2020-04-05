@@ -44,7 +44,7 @@ public class BlockSlabStone extends BlockSlab {
                 "Nether Brick"
         };
 
-        return ((this.meta & 0x08) > 0 ? "Upper " : "") + names[this.meta & 0x07] + " Slab";
+        return ((this.getDamage() & 0x08) > 0 ? "Upper " : "") + names[this.getDamage() & 0x07] + " Slab";
     }
 
     @Override
@@ -60,7 +60,7 @@ public class BlockSlabStone extends BlockSlab {
 
     @Override
     public Item toItem() {
-        return new ItemBlock(this, this.meta & 0x07);
+        return new ItemBlock(this, this.getDamage() & 0x07);
     }
 
     @Override
@@ -70,26 +70,21 @@ public class BlockSlabStone extends BlockSlab {
 
     @Override
     public BlockColor getColor() {
-        switch (this.meta & 0x07) {
+        switch (this.getDamage() & 0x07) {
+            case NETHER_BRICK:
+                return BlockColor.NETHERRACK_BLOCK_COLOR;
+            default:
             case STONE:
+            case COBBLESTONE:
+            case BRICK:
+            case STONE_BRICK:
                 return BlockColor.STONE_BLOCK_COLOR;
             case SANDSTONE:
                 return BlockColor.SAND_BLOCK_COLOR;
             case WOODEN:
                 return BlockColor.WOOD_BLOCK_COLOR;
-            case COBBLESTONE:
-                return BlockColor.STONE_BLOCK_COLOR;
-            case BRICK:
-                return BlockColor.STONE_BLOCK_COLOR;
-            case STONE_BRICK:
-                return BlockColor.STONE_BLOCK_COLOR;
             case QUARTZ:
                 return BlockColor.QUARTZ_BLOCK_COLOR;
-            case NETHER_BRICK:
-                return BlockColor.NETHERRACK_BLOCK_COLOR;
-
-            default:
-                return BlockColor.STONE_BLOCK_COLOR;     //unreachable
         }
     }
 

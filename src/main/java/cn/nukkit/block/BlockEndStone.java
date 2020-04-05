@@ -2,6 +2,7 @@ package cn.nukkit.block;
 
 import cn.nukkit.item.Item;
 import cn.nukkit.item.ItemTool;
+import cn.nukkit.utils.BlockColor;
 
 /**
  * Created on 2015/12/1 by xtypr.
@@ -10,11 +11,6 @@ import cn.nukkit.item.ItemTool;
 public class BlockEndStone extends BlockSolid {
 
     public BlockEndStone() {
-        this(0);
-    }
-
-    public BlockEndStone(int meta) {
-        super(0);
     }
 
     @Override
@@ -56,5 +52,10 @@ public class BlockEndStone extends BlockSolid {
     @Override
     public boolean canHarvestWithHand() {
         return false;
+    }
+
+    @Override
+    public BlockColor getColor() {
+        return BlockColor.SAND_BLOCK_COLOR;
     }
 }

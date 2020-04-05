@@ -33,7 +33,6 @@ public class Config {
 
     //private LinkedHashMap<String, Object> config = new LinkedHashMap<>();
     private ConfigSection config = new ConfigSection();
-    private final Map<String, Object> nestedCache = new HashMap<>();
     private File file;
     private boolean correct = false;
     private int type = Config.DETECT;
@@ -110,7 +109,6 @@ public class Config {
 
     public void reload() {
         this.config.clear();
-        this.nestedCache.clear();
         this.correct = false;
         //this.load(this.file.toString());
         if (this.file == null) throw new IllegalStateException("Failed to reload Config. File object is undefined.");
@@ -235,7 +233,7 @@ public class Config {
                 case Config.ENUM:
                     for (Object o : this.config.entrySet()) {
                         Map.Entry entry = (Map.Entry) o;
-                        content += String.valueOf(entry.getKey()) + "\r\n";
+                        content += entry.getKey() + "\r\n";
                     }
                     break;
             }
@@ -468,34 +466,37 @@ public class Config {
             if (v instanceof Boolean) {
                 v = (Boolean) v ? "on" : "off";
             }
-            content += String.valueOf(k) + "=" + String.valueOf(v) + "\r\n";
+            content += k + "=" + v + "\r\n";
         }
         return content;
     }
 
     private void parseProperties(String content) {
-        for (String line : content.split("\n")) {
-            if (Pattern.compile("[a-zA-Z0-9\\-_\\.]*+=+[^\\r\\n]*").matcher(line).matches()) {
-                String[] b = line.split("=", -1);
-                String k = b[0];
-                String v = b[1].trim();
-                String v_lower = v.toLowerCase();
-                if (this.config.containsKey(k)) {
-                    MainLogger.getLogger().debug("[Config] Repeated property " + k + " on file " + this.file.toString());
+        for (final String line : content.split("\n")) {
+            if (Pattern.compile("[a-zA-Z0-9\\-_.]*+=+[^\\r\\n]*").matcher(line).matches()) {
+                final int splitIndex = line.indexOf('=');
+                if (splitIndex == -1) {
+                    continue;
                 }
-                switch (v_lower) {
+                final String key = line.substring(0, splitIndex);
+                final String value = line.substring(splitIndex + 1);
+                final String valueLower = value.toLowerCase();
+                if (this.config.containsKey(key)) {
+                    MainLogger.getLogger().debug("[Config] Repeated property " + key + " on file " + this.file.toString());
+                }
+                switch (valueLower) {
                     case "on":
                     case "true":
                     case "yes":
-                        this.config.put(k, true);
+                        this.config.put(key, true);
                         break;
                     case "off":
                     case "false":
                     case "no":
-                        this.config.put(k, false);
+                        this.config.put(key, false);
                         break;
                     default:
-                        this.config.put(k, v);
+                        this.config.put(key, value);
                         break;
                 }
             }
@@ -511,7 +512,7 @@ public class Config {
     }
 
     /**
-     * @deprecated use {@link #get(String, T)} instead
+     * @deprecated use {@link #get(String, Object)} instead
      */
     @Deprecated
     public <T> T getNested(String key, T defaultValue) {
@@ -551,9 +552,6 @@ public class Config {
                 dumperOptions.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
                 Yaml yaml = new Yaml(dumperOptions);
                 this.config = new ConfigSection(yaml.loadAs(content, LinkedHashMap.class));
-                if (this.config == null) {
-                    this.config = new ConfigSection();
-                }
                 break;
             // case Config.SERIALIZED
             case Config.ENUM:

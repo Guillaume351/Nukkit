@@ -1,9 +1,12 @@
 package cn.nukkit.network.protocol;
 
+import lombok.ToString;
+
 /**
  * author: MagicDroidX
  * Nukkit Project
  */
+@ToString
 public class ContainerClosePacket extends DataPacket {
     public static final byte NETWORK_ID = ProtocolInfo.CONTAINER_CLOSE_PACKET;
 
@@ -16,7 +19,7 @@ public class ContainerClosePacket extends DataPacket {
 
     @Override
     public void decode() {
-        this.windowId = this.getByte();
+        this.windowId = (byte) this.getByte();
     }
 
     @Override

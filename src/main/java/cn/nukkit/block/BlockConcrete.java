@@ -2,11 +2,13 @@ package cn.nukkit.block;
 
 import cn.nukkit.item.Item;
 import cn.nukkit.item.ItemTool;
+import cn.nukkit.utils.BlockColor;
+import cn.nukkit.utils.DyeColor;
 
 /**
  * Created by CreeperFace on 2.6.2017.
  */
-public class BlockConcrete extends BlockSolid {
+public class BlockConcrete extends BlockSolidMeta {
 
     public BlockConcrete() {
         this(0);
@@ -44,5 +46,14 @@ public class BlockConcrete extends BlockSolid {
     @Override
     public Item[] getDrops(Item item) {
         return item.getTier() >= ItemTool.TIER_WOODEN ? new Item[]{toItem()} : new Item[0];
+    }
+
+    @Override
+    public BlockColor getColor() {
+        return DyeColor.getByWoolData(getDamage()).getColor();
+    }
+
+    public DyeColor getDyeColor() {
+        return DyeColor.getByWoolData(getDamage());
     }
 }

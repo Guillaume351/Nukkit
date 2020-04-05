@@ -1,12 +1,15 @@
 package cn.nukkit.network.protocol;
 
 import cn.nukkit.resourcepacks.ResourcePack;
+import lombok.ToString;
 
+@ToString
 public class ResourcePacksInfoPacket extends DataPacket {
 
     public static final byte NETWORK_ID = ProtocolInfo.RESOURCE_PACKS_INFO_PACKET;
 
-    public boolean mustAccept = false;
+    public boolean mustAccept;
+    public boolean unknownBool;
     public ResourcePack[] behaviourPackEntries = new ResourcePack[0];
     public ResourcePack[] resourcePackEntries = new ResourcePack[0];
 
@@ -19,21 +22,22 @@ public class ResourcePacksInfoPacket extends DataPacket {
     public void encode() {
         this.reset();
         this.putBoolean(this.mustAccept);
+        this.putBoolean(this.unknownBool);
 
-        this.putLShort(this.behaviourPackEntries.length);
-        for (ResourcePack entry : this.behaviourPackEntries) {
-            this.putString(entry.getPackId());
+        encodePacks(this.resourcePackEntries);
+        encodePacks(this.behaviourPackEntries);
+    }
+
+    private void encodePacks(ResourcePack[] packs) {
+        this.putLShort(packs.length);
+        for (ResourcePack entry : packs) {
+            this.putString(entry.getPackId().toString());
             this.putString(entry.getPackVersion());
             this.putLLong(entry.getPackSize());
-            this.putString(""); //unknown
-        }
-
-        this.putLShort(this.resourcePackEntries.length);
-        for (ResourcePack entry : this.resourcePackEntries) {
-            this.putString(entry.getPackId());
-            this.putString(entry.getPackVersion());
-            this.putLLong(entry.getPackSize());
-            this.putString(""); //unknown
+            this.putString(""); // encryption key
+            this.putString(""); // sub-pack name
+            this.putString(""); // content identity
+            this.putBoolean(false); // ???
         }
     }
 

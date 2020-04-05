@@ -1,14 +1,14 @@
 package cn.nukkit.entity.mob;
 
-import cn.nukkit.Player;
+import cn.nukkit.entity.EntitySmite;
+import cn.nukkit.item.Item;
 import cn.nukkit.level.format.FullChunk;
 import cn.nukkit.nbt.tag.CompoundTag;
-import cn.nukkit.network.protocol.AddEntityPacket;
 
 /**
  * @author PikyCZ
  */
-public class EntityStray extends EntityMob {
+public class EntityStray extends EntityMob implements EntitySmite {
 
     public static final int NETWORK_ID = 46;
 
@@ -29,12 +29,12 @@ public class EntityStray extends EntityMob {
 
     @Override
     public float getWidth() {
-        return 0.65f;
+        return 0.6f;
     }
 
     @Override
     public float getHeight() {
-        return 1.8f;
+        return 1.99f;
     }
 
     @Override
@@ -43,20 +43,7 @@ public class EntityStray extends EntityMob {
     }
 
     @Override
-    public void spawnTo(Player player) {
-        AddEntityPacket pk = new AddEntityPacket();
-        pk.type = this.getNetworkId();
-        pk.entityUniqueId = this.getId();
-        pk.entityRuntimeId = this.getId();
-        pk.x = (float) this.x;
-        pk.y = (float) this.y;
-        pk.z = (float) this.z;
-        pk.speedX = (float) this.motionX;
-        pk.speedY = (float) this.motionY;
-        pk.speedZ = (float) this.motionZ;
-        pk.metadata = this.dataProperties;
-        player.dataPacket(pk);
-
-        super.spawnTo(player);
+    public Item[] getDrops() {
+        return new Item[]{Item.get(Item.BONE, Item.ARROW)};
     }
 }

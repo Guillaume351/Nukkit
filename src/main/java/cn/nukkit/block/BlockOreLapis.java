@@ -17,11 +17,6 @@ public class BlockOreLapis extends BlockSolid {
 
 
     public BlockOreLapis() {
-        this(0);
-    }
-
-    public BlockOreLapis(int meta) {
-        super(0);
     }
 
     @Override
@@ -80,5 +75,10 @@ public class BlockOreLapis extends BlockSolid {
     @Override
     public boolean canHarvestWithHand() {
         return false;
+    }
+
+    @Override
+    public boolean canSilkTouch() {
+        return true;
     }
 }

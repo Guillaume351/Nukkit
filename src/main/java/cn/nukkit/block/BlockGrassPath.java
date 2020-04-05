@@ -1,7 +1,8 @@
 package cn.nukkit.block;
 
+import cn.nukkit.Player;
+import cn.nukkit.item.Item;
 import cn.nukkit.item.ItemTool;
-import cn.nukkit.math.AxisAlignedBB;
 import cn.nukkit.utils.BlockColor;
 
 /**
@@ -11,11 +12,6 @@ import cn.nukkit.utils.BlockColor;
 public class BlockGrassPath extends BlockGrass {
 
     public BlockGrassPath() {
-        this(0);
-    }
-
-    public BlockGrassPath(int meta) {
-        super(0);
     }
 
     @Override
@@ -34,15 +30,8 @@ public class BlockGrassPath extends BlockGrass {
     }
 
     @Override
-    protected AxisAlignedBB recalculateBoundingBox() {
-        return new AxisAlignedBB(
-                this.x,
-                this.y,
-                this.z,
-                this.x + 1,
-                this.y + 0.9375,
-                this.z + 1
-        );
+    public double getMaxY() {
+        return this.y + 0.9375;
     }
 
     @Override
@@ -51,9 +40,26 @@ public class BlockGrassPath extends BlockGrass {
     }
 
     @Override
-    public BlockColor getColor() {
-        //todo edit this after minecraft pc 1.9 come out
-        return BlockColor.GRASS_BLOCK_COLOR;
+    public BlockColor getColor() { return BlockColor.DIRT_BLOCK_COLOR; }
+
+    @Override
+    public boolean canSilkTouch() {
+        return true;
     }
 
+    @Override
+    public int onUpdate(int type) {
+        return 0;
+    }
+
+    @Override
+    public boolean onActivate(Item item, Player player) {
+        if (item.isHoe()) {
+            item.useOn(this);
+            this.getLevel().setBlock(this, get(FARMLAND), true);
+            return true;
+        }
+
+        return false;
+    }
 }

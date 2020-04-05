@@ -4,11 +4,12 @@ import cn.nukkit.item.Item;
 import cn.nukkit.item.ItemBlock;
 import cn.nukkit.item.ItemTool;
 import cn.nukkit.math.NukkitRandom;
+import cn.nukkit.utils.BlockColor;
 
 /**
  * Created by Pub4Game on 28.01.2016.
  */
-public class BlockHugeMushroomBrown extends BlockSolid {
+public class BlockHugeMushroomBrown extends BlockSolidMeta {
 
     public BlockHugeMushroomBrown() {
         this(0);
@@ -47,10 +48,18 @@ public class BlockHugeMushroomBrown extends BlockSolid {
     public Item[] getDrops(Item item) {
         if (new NukkitRandom().nextRange(1, 20) == 0) {
             return new Item[]{
-                    new ItemBlock(new BlockMushroomBrown())
+                    new ItemBlock(Block.get(BlockID.BROWN_MUSHROOM))
             };
         } else {
             return new Item[0];
         }
     }
+
+    @Override
+    public boolean canSilkTouch() {
+        return true;
+    }
+
+    @Override
+    public BlockColor getColor() { return BlockColor.DIRT_BLOCK_COLOR; }
 }

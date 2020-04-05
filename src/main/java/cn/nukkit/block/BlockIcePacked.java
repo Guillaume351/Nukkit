@@ -1,5 +1,6 @@
 package cn.nukkit.block;
 
+import cn.nukkit.item.Item;
 import cn.nukkit.item.ItemTool;
 
 /**
@@ -9,11 +10,6 @@ import cn.nukkit.item.ItemTool;
 public class BlockIcePacked extends BlockIce {
 
     public BlockIcePacked() {
-        this(0);
-    }
-
-    public BlockIcePacked(int meta) {
-        super(0);
     }
 
     @Override
@@ -39,5 +35,16 @@ public class BlockIcePacked extends BlockIce {
     @Override
     public boolean canHarvestWithHand() {
         return false;
+    }
+    
+    @Override
+    public boolean onBreak(Item item) {
+        this.getLevel().setBlock(this, Block.get(BlockID.AIR), true); //no water
+        return true;
+    }
+
+    @Override
+    public boolean canSilkTouch() {
+        return true;
     }
 }

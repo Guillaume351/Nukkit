@@ -1,10 +1,7 @@
 package cn.nukkit.blockentity;
 
 import cn.nukkit.Player;
-import cn.nukkit.block.Block;
-import cn.nukkit.block.BlockAir;
-import cn.nukkit.block.BlockFurnace;
-import cn.nukkit.block.BlockFurnaceBurning;
+import cn.nukkit.block.*;
 import cn.nukkit.event.inventory.FurnaceBurnEvent;
 import cn.nukkit.event.inventory.FurnaceSmeltEvent;
 import cn.nukkit.inventory.FurnaceInventory;
@@ -25,15 +22,19 @@ import java.util.HashSet;
  */
 public class BlockEntityFurnace extends BlockEntitySpawnable implements InventoryHolder, BlockEntityContainer, BlockEntityNameable {
 
-    protected final FurnaceInventory inventory;
+    protected FurnaceInventory inventory;
 
-    private int burnTime = 0;
-    private int burnDuration = 0;
-    private int cookTime = 0;
-    private int maxTime = 0;
+    protected int burnTime = 0;
+    protected int burnDuration = 0;
+    protected int cookTime = 0;
+    protected int maxTime = 0;
 
     public BlockEntityFurnace(FullChunk chunk, CompoundTag nbt) {
         super(chunk, nbt);
+    }
+
+    @Override
+    protected void initBlockEntity() {
         this.inventory = new FurnaceInventory(this);
 
         if (!this.namedTag.contains("Items") || !(this.namedTag.get("Items") instanceof ListTag)) {
@@ -71,6 +72,8 @@ public class BlockEntityFurnace extends BlockEntitySpawnable implements Inventor
         if (burnTime > 0) {
             this.scheduleUpdate();
         }
+
+        super.initBlockEntity();
     }
 
     @Override
@@ -95,11 +98,18 @@ public class BlockEntityFurnace extends BlockEntitySpawnable implements Inventor
 
     @Override
     public void close() {
-        if (!this.closed) {
+        if (!closed) {
             for (Player player : new HashSet<>(this.getInventory().getViewers())) {
                 player.removeWindow(this.getInventory());
             }
             super.close();
+        }
+    }
+
+    @Override
+    public void onBreak() {
+        for (Item content : inventory.getContents().values()) {
+            level.dropItem(this, content);
         }
     }
 
@@ -142,7 +152,7 @@ public class BlockEntityFurnace extends BlockEntitySpawnable implements Inventor
     public Item getItem(int index) {
         int i = this.getSlotIndex(index);
         if (i < 0) {
-            return new ItemBlock(new BlockAir(), 0, 0);
+            return new ItemBlock(Block.get(BlockID.AIR), 0, 0);
         } else {
             CompoundTag data = (CompoundTag) this.namedTag.getList("Items").get(i);
             return NBTIO.getItemHelper(data);
@@ -172,9 +182,8 @@ public class BlockEntityFurnace extends BlockEntitySpawnable implements Inventor
     }
 
     protected void checkFuel(Item fuel) {
-
         FurnaceBurnEvent ev = new FurnaceBurnEvent(this, fuel, fuel.getFuelTime() == null ? 0 : fuel.getFuelTime());
-
+        this.server.getPluginManager().callEvent(ev);
         if (ev.isCancelled()) {
             return;
         }
@@ -183,7 +192,7 @@ public class BlockEntityFurnace extends BlockEntitySpawnable implements Inventor
         burnTime = ev.getBurnTime();
         burnDuration = 0;
         if (this.getBlock().getId() == Item.FURNACE) {
-            this.getLevel().setBlock(this, new BlockFurnaceBurning(this.getBlock().getDamage()), true);
+            this.getLevel().setBlock(this, Block.get(BlockID.BURNING_FURNACE, this.getBlock().getDamage()), true);
         }
 
         if (burnTime > 0 && ev.isBurning()) {
@@ -193,7 +202,7 @@ public class BlockEntityFurnace extends BlockEntitySpawnable implements Inventor
                     fuel.setDamage(0);
                     fuel.setCount(1);
                 } else {
-                    fuel = new ItemBlock(new BlockAir(), 0, 0);
+                    fuel = new ItemBlock(Block.get(BlockID.AIR), 0, 0);
                 }
             }
             this.inventory.setFuel(fuel);
@@ -221,7 +230,7 @@ public class BlockEntityFurnace extends BlockEntitySpawnable implements Inventor
 
         if (burnTime > 0) {
             burnTime--;
-            burnDuration = (int) Math.ceil(burnTime / maxTime * 200);
+            burnDuration = (int) Math.ceil((float) burnTime / maxTime * 200);
 
             if (smelt != null && canSmelt) {
                 cookTime++;
@@ -234,7 +243,7 @@ public class BlockEntityFurnace extends BlockEntitySpawnable implements Inventor
                         this.inventory.setResult(ev.getResult());
                         raw.setCount(raw.getCount() - 1);
                         if (raw.getCount() == 0) {
-                            raw = new ItemBlock(new BlockAir(), 0, 0);
+                            raw = new ItemBlock(Block.get(BlockID.AIR), 0, 0);
                         }
                         this.inventory.setSmelting(raw);
                     }
@@ -251,7 +260,7 @@ public class BlockEntityFurnace extends BlockEntitySpawnable implements Inventor
             ret = true;
         } else {
             if (this.getBlock().getId() == Item.BURNING_FURNACE) {
-                this.getLevel().setBlock(this, new BlockFurnace(this.getBlock().getDamage()), true);
+                this.getLevel().setBlock(this, Block.get(BlockID.FURNACE, this.getBlock().getDamage()), true);
             }
             burnTime = 0;
             cookTime = 0;
@@ -264,7 +273,7 @@ public class BlockEntityFurnace extends BlockEntitySpawnable implements Inventor
                 ContainerSetDataPacket pk = new ContainerSetDataPacket();
                 pk.windowId = windowId;
                 pk.property = ContainerSetDataPacket.PROPERTY_FURNACE_TICK_COUNT;
-                ;
+
                 pk.value = cookTime;
                 player.dataPacket(pk);
 
@@ -301,4 +310,35 @@ public class BlockEntityFurnace extends BlockEntitySpawnable implements Inventor
         return c;
     }
 
+    public int getBurnTime() {
+        return burnTime;
+    }
+
+    public void setBurnTime(int burnTime) {
+        this.burnTime = burnTime;
+    }
+
+    public int getBurnDuration() {
+        return burnDuration;
+    }
+
+    public void setBurnDuration(int burnDuration) {
+        this.burnDuration = burnDuration;
+    }
+
+    public int getCookTime() {
+        return cookTime;
+    }
+
+    public void setCookTime(int cookTime) {
+        this.cookTime = cookTime;
+    }
+
+    public int getMaxTime() {
+        return maxTime;
+    }
+
+    public void setMaxTime(int maxTime) {
+        this.maxTime = maxTime;
+    }
 }

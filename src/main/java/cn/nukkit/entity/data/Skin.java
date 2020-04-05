@@ -1,120 +1,234 @@
 package cn.nukkit.entity.data;
 
-import javax.imageio.ImageIO;
-import javax.imageio.stream.ImageInputStream;
+import cn.nukkit.nbt.stream.FastByteArrayOutputStream;
+import cn.nukkit.utils.Binary;
+import cn.nukkit.utils.SerializedImage;
+import cn.nukkit.utils.SkinAnimation;
+import com.google.common.base.Preconditions;
+import lombok.ToString;
+import net.minidev.json.JSONObject;
+import net.minidev.json.JSONValue;
+
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.util.Base64;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 
 /**
  * author: MagicDroidX
  * Nukkit Project
  */
+@ToString(exclude = {"geometryData", "animationData"})
 public class Skin {
+    private static final int PIXEL_SIZE = 4;
 
-    public static final int SINGLE_SKIN_SIZE = 64 * 32 * 4;
-    public static final int DOUBLE_SKIN_SIZE = 64 * 64 * 4;
+    public static final int SINGLE_SKIN_SIZE = 64 * 32 * PIXEL_SIZE;
+    public static final int DOUBLE_SKIN_SIZE = 64 * 64 * PIXEL_SIZE;
+    public static final int SKIN_128_64_SIZE = 128 * 64 * PIXEL_SIZE;
+    public static final int SKIN_128_128_SIZE = 128 * 128 * PIXEL_SIZE;
 
-    public static final String MODEL_STEVE = "Standard_Steve";
-    public static final String MODEL_ALEX = "Standard_Alex";
+    public static final String GEOMETRY_CUSTOM = convertLegacyGeometryName("geometry.humanoid.custom");
+    public static final String GEOMETRY_CUSTOM_SLIM = convertLegacyGeometryName("geometry.humanoid.customSlim");
 
-    private byte[] data = new byte[SINGLE_SKIN_SIZE];
-    private String model;
-    private Cape cape = new Cape(new byte[0]);  //default no cape
+    private final String fullSkinId = UUID.randomUUID().toString();
+    private String skinId;
+    private String skinResourcePatch = GEOMETRY_CUSTOM;
+    private SerializedImage skinData;
+    private final List<SkinAnimation> animations = new ArrayList<>();
+    private SerializedImage capeData;
+    private String geometryData;
+    private String animationData;
+    private boolean premium;
+    private boolean persona;
+    private boolean capeOnClassic;
+    private String capeId;
 
-    public Skin(byte[] data) {
-        this(data, MODEL_STEVE);
+    public boolean isValid() {
+        return isValidSkin() && isValidResourcePatch();
     }
 
-    public Skin(InputStream inputStream) {
-        this(inputStream, MODEL_STEVE);
+    private boolean isValidSkin() {
+        return skinId != null && !skinId.trim().isEmpty() &&
+                skinData != null && skinData.width >= 64 && skinData.height >= 32 &&
+                skinData.data.length >= SINGLE_SKIN_SIZE;
     }
 
-    public Skin(ImageInputStream inputStream) {
-        this(inputStream, MODEL_STEVE);
-    }
-
-    public Skin(File file) {
-        this(file, MODEL_STEVE);
-    }
-
-    public Skin(URL url) {
-        this(url, MODEL_STEVE);
-    }
-
-    public Skin(BufferedImage image) {
-        this(image, MODEL_STEVE);
-    }
-
-    public Skin(byte[] data, String model) {
-        this.setData(data);
-        this.setModel(model);
-    }
-
-    public Skin(InputStream inputStream, String model) {
-        BufferedImage image;
-        try {
-            image = ImageIO.read(inputStream);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+    private boolean isValidResourcePatch() {
+        if (skinResourcePatch == null) {
+            return false;
         }
-        this.parseBufferedImage(image);
-        this.setModel(model);
-    }
-
-    public Skin(ImageInputStream inputStream, String model) {
-        BufferedImage image;
         try {
-            image = ImageIO.read(inputStream);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+            JSONObject object = (JSONObject) JSONValue.parse(skinResourcePatch);
+            JSONObject geometry = (JSONObject) object.get("geometry");
+            return geometry.containsKey("default") && geometry.get("default") instanceof String;
+        } catch (ClassCastException | NullPointerException e) {
+            return false;
         }
-        this.parseBufferedImage(image);
-        this.setModel(model);
     }
 
-    public Skin(File file, String model) {
-        BufferedImage image;
-        try {
-            image = ImageIO.read(file);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+    public SerializedImage getSkinData() {
+        if (skinData == null) {
+            return SerializedImage.EMPTY;
         }
-        this.parseBufferedImage(image);
-        this.setModel(model);
+        return skinData;
     }
 
-    public Skin(URL url, String model) {
-        BufferedImage image;
-        try {
-            image = ImageIO.read(url);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+    public String getSkinId() {
+        if (this.skinId == null) {
+            this.generateSkinId("Custom");
         }
-        this.parseBufferedImage(image);
-        this.setModel(model);
+        return skinId;
     }
 
-    public Skin(BufferedImage image, String model) {
-        this.parseBufferedImage(image);
-        this.setModel(model);
+    public void setSkinId(String skinId) {
+        if (skinId == null || skinId.trim().isEmpty()) {
+            return;
+        }
+        this.skinId = skinId;
     }
 
-    public Skin(String base64) {
-        this(Base64.getDecoder().decode(base64));
+    public void generateSkinId(String name) {
+        byte[] data = Binary.appendBytes(getSkinData().data, getSkinResourcePatch().getBytes(StandardCharsets.UTF_8));
+        this.skinId = UUID.nameUUIDFromBytes(data) + "." + name;
     }
 
-    public Skin(String base64, String model) {
-        this(Base64.getDecoder().decode(base64), model);
+    public void setSkinData(byte[] skinData) {
+        setSkinData(SerializedImage.fromLegacy(skinData));
     }
 
-    public void parseBufferedImage(BufferedImage image) {
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    public void setSkinData(BufferedImage image) {
+        setSkinData(parseBufferedImage(image));
+    }
+
+    public void setSkinData(SerializedImage skinData) {
+        Objects.requireNonNull(skinData, "skinData");
+        this.skinData = skinData;
+    }
+
+    public void setSkinResourcePatch(String skinResourcePatch) {
+        if (skinResourcePatch == null || skinResourcePatch.trim().isEmpty()) {
+            skinResourcePatch = GEOMETRY_CUSTOM;
+        }
+        this.skinResourcePatch = skinResourcePatch;
+    }
+
+    public void setGeometryName(String geometryName) {
+        if (geometryName == null || geometryName.trim().isEmpty()) {
+            skinResourcePatch = GEOMETRY_CUSTOM;
+            return;
+        }
+
+        this.skinResourcePatch = "{\"geometry\" : {\"default\" : \"" + geometryName + "\"}}";
+    }
+
+    public String getSkinResourcePatch() {
+        if (this.skinResourcePatch == null) {
+            return "";
+        }
+        return skinResourcePatch;
+    }
+
+    public SerializedImage getCapeData() {
+        if (capeData == null) {
+            return SerializedImage.EMPTY;
+        }
+        return capeData;
+    }
+
+    public String getCapeId() {
+        if (capeId == null) {
+            return "";
+        }
+        return capeId;
+    }
+
+    public void setCapeId(String capeId) {
+        if (capeId == null || capeId.trim().isEmpty()) {
+            capeId = null;
+        }
+        this.capeId = capeId;
+    }
+
+    public void setCapeData(byte[] capeData) {
+        Objects.requireNonNull(capeData, "capeData");
+        Preconditions.checkArgument(capeData.length == SINGLE_SKIN_SIZE || capeData.length == 0, "Invalid legacy cape");
+        setCapeData(new SerializedImage(64, 32, capeData));
+    }
+
+    public void setCapeData(BufferedImage image) {
+        setCapeData(parseBufferedImage(image));
+    }
+
+    public void setCapeData(SerializedImage capeData) {
+        Objects.requireNonNull(capeData, "capeData");
+        this.capeData = capeData;
+    }
+
+    public String getGeometryData() {
+        if (geometryData == null) {
+            return "";
+        }
+        return geometryData;
+    }
+
+    public void setGeometryData(String geometryData) {
+        Preconditions.checkNotNull(geometryData, "geometryData");
+        if (!geometryData.equals(this.geometryData)) {
+            this.geometryData = geometryData;
+        }
+    }
+
+    public String getAnimationData() {
+        if (animationData == null) {
+            return "";
+        }
+        return animationData;
+    }
+
+    public void setAnimationData(String animationData) {
+        Preconditions.checkNotNull(animationData, "animationData");
+        if (!animationData.equals(this.animationData)) {
+            this.animationData = animationData;
+        }
+    }
+
+    public List<SkinAnimation> getAnimations() {
+        return animations;
+    }
+
+    public boolean isPremium() {
+        return premium;
+    }
+
+    public void setPremium(boolean premium) {
+        this.premium = premium;
+    }
+
+    public boolean isPersona() {
+        return persona;
+    }
+
+    public void setPersona(boolean persona) {
+        this.persona = persona;
+    }
+
+    public boolean isCapeOnClassic() {
+        return capeOnClassic;
+    }
+
+    public void setCapeOnClassic(boolean capeOnClassic) {
+        this.capeOnClassic = capeOnClassic;
+    }
+
+    public String getFullSkinId() {
+        return fullSkinId;
+    }
+
+    private static SerializedImage parseBufferedImage(BufferedImage image) {
+        FastByteArrayOutputStream outputStream = new FastByteArrayOutputStream();
         for (int y = 0; y < image.getHeight(); y++) {
             for (int x = 0; x < image.getWidth(); x++) {
                 Color color = new Color(image.getRGB(x, y), true);
@@ -125,122 +239,10 @@ public class Skin {
             }
         }
         image.flush();
-        this.setData(outputStream.toByteArray());
+        return new SerializedImage(image.getWidth(), image.getHeight(), outputStream.toByteArray());
     }
 
-    public byte[] getData() {
-        return data;
-    }
-
-    public String getModel() {
-        return model;
-    }
-
-    public void setData(byte[] data) {
-        if (data.length != SINGLE_SKIN_SIZE && data.length != DOUBLE_SKIN_SIZE) {
-            throw new IllegalArgumentException("Invalid skin");
-        }
-        this.data = data;
-    }
-
-    public void setModel(String model) {
-        if (model == null || model.trim().isEmpty()) {
-            model = MODEL_STEVE;
-        }
-
-        this.model = model;
-    }
-
-    public Cape getCape() {
-        return cape;
-    }
-
-    public void setCape(Cape cape) {
-        this.cape = cape;
-    }
-
-    public boolean isValid() {
-        return this.data.length == SINGLE_SKIN_SIZE || this.data.length == DOUBLE_SKIN_SIZE;
-    }
-
-    public class Cape {
-
-        public byte[] data;
-
-        public Cape(byte[] data) {
-            this.setData(data);
-        }
-
-        public Cape(InputStream inputStream) {
-            BufferedImage image;
-            try {
-                image = ImageIO.read(inputStream);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-
-            this.parseBufferedImage(image);
-        }
-
-        public Cape(ImageInputStream inputStream) {
-            BufferedImage image;
-            try {
-                image = ImageIO.read(inputStream);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-            this.parseBufferedImage(image);
-        }
-
-        public Cape(File file, String model) {
-            BufferedImage image;
-            try {
-                image = ImageIO.read(file);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-            this.parseBufferedImage(image);
-        }
-
-        public Cape(URL url) {
-            BufferedImage image;
-            try {
-                image = ImageIO.read(url);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-            this.parseBufferedImage(image);
-        }
-
-        public Cape(BufferedImage image) {
-            this.parseBufferedImage(image);
-        }
-
-        public Cape(String base64) {
-            this(Base64.getDecoder().decode(base64));
-        }
-
-        public void setData(byte[] data) {
-            this.data = data;
-        }
-
-        public byte[] getData() {
-            return data;
-        }
-
-        public void parseBufferedImage(BufferedImage image) {
-            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            for (int y = 0; y < image.getHeight(); y++) {
-                for (int x = 0; x < image.getWidth(); x++) {
-                    Color color = new Color(image.getRGB(x, y), true);
-                    outputStream.write(color.getRed());
-                    outputStream.write(color.getGreen());
-                    outputStream.write(color.getBlue());
-                    outputStream.write(color.getAlpha());
-                }
-            }
-            image.flush();
-            this.setData(outputStream.toByteArray());
-        }
+    private static String convertLegacyGeometryName(String geometryName) {
+        return "{\"geometry\" : {\"default\" : \"" + geometryName + "\"}}";
     }
 }

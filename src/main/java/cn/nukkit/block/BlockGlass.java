@@ -1,6 +1,7 @@
 package cn.nukkit.block;
 
 import cn.nukkit.item.Item;
+import cn.nukkit.utils.BlockColor;
 
 /**
  * author: Angelic47
@@ -9,11 +10,6 @@ import cn.nukkit.item.Item;
 public class BlockGlass extends BlockTransparent {
 
     public BlockGlass() {
-        this(0);
-    }
-
-    public BlockGlass(int meta) {
-        super(meta);
     }
 
     @Override
@@ -39,5 +35,15 @@ public class BlockGlass extends BlockTransparent {
     @Override
     public Item[] getDrops(Item item) {
         return new Item[0];
+    }
+
+    @Override
+    public boolean canSilkTouch() {
+        return true;
+    }
+
+    @Override
+    public BlockColor getColor() {
+        return BlockColor.AIR_BLOCK_COLOR;
     }
 }

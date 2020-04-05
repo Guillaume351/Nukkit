@@ -31,7 +31,7 @@ public class BlockSlabWood extends BlockSlab {
                 "",
                 ""
         };
-        return (((this.meta & 0x08) == 0x08) ? "Upper " : "") + names[this.meta & 0x07] + " Wooden Slab";
+        return (((this.getDamage() & 0x08) == 0x08) ? "Upper " : "") + names[this.getDamage() & 0x07] + " Wooden Slab";
     }
 
     @Override
@@ -63,11 +63,25 @@ public class BlockSlabWood extends BlockSlab {
 
     @Override
     public Item toItem() {
-        return new ItemBlock(this, this.meta & 0x07);
+        return new ItemBlock(this, this.getDamage() & 0x07);
     }
 
     @Override
     public BlockColor getColor() {
-        return BlockColor.WOOD_BLOCK_COLOR;
+        switch(getDamage() & 0x07){
+            default:
+            case 0: //OAK
+                return BlockColor.WOOD_BLOCK_COLOR;
+            case 1: //SPRUCE
+                return BlockColor.SPRUCE_BLOCK_COLOR;
+            case 2: //BIRCH
+                return BlockColor.SAND_BLOCK_COLOR;
+            case 3: //JUNGLE
+                return BlockColor.DIRT_BLOCK_COLOR;
+            case 4: //ACACIA
+                return BlockColor.ORANGE_BLOCK_COLOR;
+            case 5: //DARK OAK
+                return BlockColor.BROWN_BLOCK_COLOR;
+        }
     }
 }

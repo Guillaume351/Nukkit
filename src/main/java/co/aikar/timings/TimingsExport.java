@@ -28,6 +28,7 @@ import cn.nukkit.command.CommandSender;
 import cn.nukkit.command.ConsoleCommandSender;
 import cn.nukkit.command.RemoteConsoleCommandSender;
 import cn.nukkit.lang.TranslationContainer;
+import cn.nukkit.nbt.stream.PGZIPOutputStream;
 import cn.nukkit.timings.JsonUtil;
 import cn.nukkit.utils.TextFormat;
 import com.google.gson.Gson;
@@ -40,9 +41,10 @@ import java.lang.management.RuntimeMXBean;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.zip.GZIPOutputStream;
+import java.util.zip.Deflater;
 
 import static co.aikar.timings.TimingsManager.HISTORY;
 
@@ -100,7 +102,7 @@ public class TimingsExport extends Thread {
 
         JsonObject timings = new JsonObject();
         for (TimingIdentifier.TimingGroup group : TimingIdentifier.GROUP_MAP.values()) {
-            for (Timing id : group.timings.stream().toArray(Timing[]::new)) {
+            for (Timing id : group.timings) {
                 if (!id.timed && !id.isSpecial()) {
                     continue;
                 }
@@ -205,19 +207,16 @@ public class TimingsExport extends Thread {
             con.setRequestMethod("POST");
             con.setInstanceFollowRedirects(false);
 
-            OutputStream request = new GZIPOutputStream(con.getOutputStream()) {
-                {
-                    this.def.setLevel(7);
-                }
-            };
+            PGZIPOutputStream request = new PGZIPOutputStream(con.getOutputStream());
+            request.setLevel(Deflater.BEST_COMPRESSION);
 
-            request.write(new Gson().toJson(this.out).getBytes("UTF-8"));
+            request.write(new Gson().toJson(this.out).getBytes(StandardCharsets.UTF_8));
             request.close();
 
             response = getResponse(con);
 
             if (con.getResponseCode() != 302) {
-                this.sender.sendMessage(new TranslationContainer("nukkit.command.timings.uploadError", new String[]{String.valueOf(con.getResponseCode()), con.getResponseMessage()}));
+                this.sender.sendMessage(new TranslationContainer("nukkit.command.timings.uploadError", String.valueOf(con.getResponseCode()), con.getResponseMessage()));
                 if (response != null) {
                     Server.getInstance().getLogger().alert(response);
                 }
@@ -254,9 +253,7 @@ public class TimingsExport extends Thread {
     }
 
     private String getResponse(HttpURLConnection con) throws IOException {
-        InputStream is = null;
-        try {
-            is = con.getInputStream();
+        try (InputStream is = con.getInputStream()) {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
 
             byte[] b = new byte[1024];
@@ -270,10 +267,6 @@ public class TimingsExport extends Thread {
             this.sender.sendMessage(TextFormat.RED + "" + new TranslationContainer("nukkit.command.timings.reportError"));
             Server.getInstance().getLogger().warning(con.getResponseMessage(), exception);
             return null;
-        } finally {
-            if (is != null) {
-                is.close();
-            }
         }
     }
 }

@@ -7,8 +7,7 @@ import cn.nukkit.level.format.FullChunk;
 import cn.nukkit.nbt.tag.CompoundTag;
 import cn.nukkit.utils.TextFormat;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Arrays;
 import java.util.Objects;
 
 /**
@@ -17,26 +16,46 @@ import java.util.Objects;
  */
 public class BlockEntitySign extends BlockEntitySpawnable {
 
+    private String[] text;
+
     public BlockEntitySign(FullChunk chunk, CompoundTag nbt) {
         super(chunk, nbt);
+    }
 
-        if (!nbt.contains("Text")) {
-            List<String> lines = new ArrayList<>();
+    @Override
+    protected void initBlockEntity() {
+        text = new String[4];
+
+        if (!namedTag.contains("Text")) {
 
             for (int i = 1; i <= 4; i++) {
                 String key = "Text" + i;
 
-                if (nbt.contains(key)) {
-                    String line = nbt.getString(key);
+                if (namedTag.contains(key)) {
+                    String line = namedTag.getString(key);
 
-                    lines.add(line);
+                    this.text[i - 1] = line;
 
-                    nbt.remove(key);
+                    this.namedTag.remove(key);
                 }
             }
+        } else {
+            String[] lines = namedTag.getString("Text").split("\n", 4);
 
-            nbt.putString("Text", String.join("\n", lines));
+            for (int i = 0; i < text.length; i++) {
+                if (i < lines.length)
+                    text[i] = lines[i];
+                else
+                    text[i] = "";
+            }
         }
+
+        // Check old text to sanitize
+        if (text != null) {
+            sanitizeText(text);
+        }
+
+        super.initBlockEntity();
     }
 
     @Override
@@ -52,19 +71,25 @@ public class BlockEntitySign extends BlockEntitySpawnable {
     }
 
     public boolean setText(String... lines) {
-        this.namedTag.putString("Text", String.join("\n", lines));
+        for (int i = 0; i < 4; i++) {
+            if (i < lines.length)
+                text[i] = lines[i];
+            else
+                text[i] = "";
+        }
+
+        this.namedTag.putString("Text", String.join("\n", text));
         this.spawnToAll();
 
         if (this.chunk != null) {
-            this.chunk.setChanged();
-            this.level.clearChunkCache(this.chunk.getX(), this.chunk.getZ());
+            setDirty();
         }
 
         return true;
     }
 
     public String[] getText() {
-        return this.namedTag.getString("Text").split("\n");
+        return text;
     }
 
     @Override
@@ -72,17 +97,22 @@ public class BlockEntitySign extends BlockEntitySpawnable {
         if (!nbt.getString("id").equals(BlockEntity.SIGN)) {
             return false;
         }
-        String[] text = nbt.getString("Text").split("\n", 4);
+        String[] lines = new String[4];
+        Arrays.fill(lines, "");
+        String[] splitLines = nbt.getString("Text").split("\n", 4);
+        System.arraycopy(splitLines, 0, lines, 0, splitLines.length);
 
-        SignChangeEvent signChangeEvent = new SignChangeEvent(this.getBlock(), player, text);
+        sanitizeText(lines);
+
+        SignChangeEvent signChangeEvent = new SignChangeEvent(this.getBlock(), player, lines);
 
         if (!this.namedTag.contains("Creator") || !Objects.equals(player.getUniqueId().toString(), this.namedTag.getString("Creator"))) {
             signChangeEvent.setCancelled();
         }
 
         if (player.getRemoveFormat()) {
-            for (int i = 0; i < text.length; i++) {
-                text[i] = TextFormat.clean(text[i]);
+            for (int i = 0; i < lines.length; i++) {
+                lines[i] = TextFormat.clean(lines[i]);
             }
         }
 
@@ -105,5 +135,14 @@ public class BlockEntitySign extends BlockEntitySpawnable {
                 .putInt("y", (int) this.y)
                 .putInt("z", (int) this.z);
 
+    }
+
+    private static void sanitizeText(String[] lines) {
+        for (int i = 0; i < lines.length; i++) {
+            // Don't allow excessive text per line.
+            if (lines[i] != null) {
+                lines[i] = lines[i].substring(0, Math.min(255, lines[i].length()));
+            }
+        }
     }
 }

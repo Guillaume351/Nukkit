@@ -32,11 +32,6 @@ public class BlockWater extends BlockLiquid {
     }
 
     @Override
-    public boolean place(Item item, Block block, Block target, BlockFace face, double fx, double fy, double fz) {
-        return this.place(item, block, target, face, fx, fy, fz, null);
-    }
-
-    @Override
     public boolean place(Item item, Block block, Block target, BlockFace face, double fx, double fy, double fz, Player player) {
         boolean ret = this.getLevel().setBlock(this, this, true, false);
         this.getLevel().scheduleUpdate(this, this.tickRate());
@@ -51,7 +46,7 @@ public class BlockWater extends BlockLiquid {
 
     @Override
     public BlockLiquid getBlock(int meta) {
-        return new BlockWater(meta);
+        return (BlockLiquid) Block.get(BlockID.WATER, meta);
     }
 
     @Override
@@ -61,5 +56,10 @@ public class BlockWater extends BlockLiquid {
         if (entity.fireTicks > 0) {
             entity.extinguish();
         }
+    }
+
+    @Override
+    public int tickRate() {
+        return 5;
     }
 }

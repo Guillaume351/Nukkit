@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * author: MagicDroidX
@@ -31,15 +32,17 @@ public class BaseLang {
 
     public BaseLang(String lang, String path, String fallback) {
         this.langName = lang.toLowerCase();
+        boolean useFallback = !lang.equals(fallback);
 
         if (path == null) {
             path = "lang/";
             this.lang = this.loadLang(this.getClass().getClassLoader().getResourceAsStream(path + this.langName + "/lang.ini"));
-            this.fallbackLang = this.loadLang(this.getClass().getClassLoader().getResourceAsStream(path + fallback + "/lang.ini"));
+            if (useFallback) this.fallbackLang = this.loadLang(this.getClass().getClassLoader().getResourceAsStream(path + fallback + "/lang.ini"));
         } else {
             this.lang = this.loadLang(path + this.langName + "/lang.ini");
-            this.fallbackLang = this.loadLang(path + fallback + "/lang.ini");
+            if (useFallback) this.fallbackLang = this.loadLang(path + fallback + "/lang.ini");
         }
+        if (this.fallbackLang == null) this.fallbackLang = this.lang;
 
 
     }
@@ -127,7 +130,21 @@ public class BaseLang {
     }
 
     public String translateString(String str, String... params) {
-        return this.translateString(str, params, null);
+        if (params != null) {
+            return this.translateString(str, params, null);
+        }
+        return this.translateString(str, new String[0], null);
+    }
+
+    public String translateString(String str, Object... params) {
+        if (params != null) {
+            String[] paramsToString = new String[params.length];
+            for (int i = 0; i < params.length; i++) {
+                paramsToString[i] = Objects.toString(params[i]);
+            }
+            return this.translateString(str, paramsToString, null);
+        }
+        return this.translateString(str, new String[0], null);
     }
 
     public String translateString(String str, String param, String onlyPrefix) {

@@ -8,7 +8,7 @@ import cn.nukkit.utils.BlockColor;
  * author: MagicDroidX
  * Nukkit Project
  */
-public class BlockDoubleSlab extends BlockSolid {
+public class BlockDoubleSlab extends BlockSolidMeta {
     public static final int STONE = 0;
     public static final int SANDSTONE = 1;
     public static final int WOODEN = 2;
@@ -55,14 +55,14 @@ public class BlockDoubleSlab extends BlockSolid {
                 "Quartz",
                 "Nether Brick"
         };
-        return "Double " + names[this.meta & 0x07] + " Slab";
+        return "Double " + names[this.getDamage() & 0x07] + " Slab";
     }
 
     @Override
     public Item[] getDrops(Item item) {
         if (item.isPickaxe() && item.getTier() >= ItemTool.TIER_WOODEN) {
             return new Item[]{
-                    Item.get(Item.SLAB, this.meta & 0x07, 2)
+                    Item.get(Item.SLAB, this.getDamage() & 0x07, 2)
             };
         } else {
             return new Item[0];
@@ -71,26 +71,21 @@ public class BlockDoubleSlab extends BlockSolid {
 
     @Override
     public BlockColor getColor() {
-        switch (this.meta & 0x07) {
-            case BlockDoubleSlab.STONE:
-                return BlockColor.STONE_BLOCK_COLOR;
-            case BlockDoubleSlab.SANDSTONE:
-                return BlockColor.SAND_BLOCK_COLOR;
+        switch (this.getDamage() & 0x07) {
             case BlockDoubleSlab.WOODEN:
                 return BlockColor.WOOD_BLOCK_COLOR;
-            case BlockDoubleSlab.COBBLESTONE:
-                return BlockColor.STONE_BLOCK_COLOR;
-            case BlockDoubleSlab.BRICK:
-                return BlockColor.STONE_BLOCK_COLOR;
-            case BlockDoubleSlab.STONE_BRICK:
-                return BlockColor.STONE_BLOCK_COLOR;
+            default:
+                case BlockDoubleSlab.COBBLESTONE:
+                case BlockDoubleSlab.BRICK:
+                case BlockDoubleSlab.STONE_BRICK:
+                case BlockDoubleSlab.STONE:
+                    return BlockColor.STONE_BLOCK_COLOR;
+            case BlockDoubleSlab.SANDSTONE:
+                return BlockColor.SAND_BLOCK_COLOR;
             case BlockDoubleSlab.QUARTZ:
                 return BlockColor.QUARTZ_BLOCK_COLOR;
             case BlockDoubleSlab.NETHER_BRICK:
                 return BlockColor.NETHERRACK_BLOCK_COLOR;
-
-            default:
-                return BlockColor.STONE_BLOCK_COLOR;     //unreachable
         }
     }
 }

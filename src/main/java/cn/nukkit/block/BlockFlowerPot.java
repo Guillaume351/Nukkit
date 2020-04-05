@@ -26,15 +26,12 @@ public class BlockFlowerPot extends BlockFlowable {
     protected static boolean canPlaceIntoFlowerPot(int id) {
         switch (id) {
             case SAPLING:
-            case COBWEB:
-            case TALL_GRASS:
             case DEAD_BUSH:
             case DANDELION:
             case ROSE:
             case RED_MUSHROOM:
             case BROWN_MUSHROOM:
             case CACTUS:
-            case SUGARCANE_BLOCK:
                 // TODO: 2016/2/4 case NETHER_WART:
                 return true;
             default:
@@ -77,7 +74,8 @@ public class BlockFlowerPot extends BlockFlowable {
                 nbt.put(aTag.getName(), aTag);
             }
         }
-        new BlockEntityFlowerPot(getLevel().getChunk((int) block.x >> 4, (int) block.z >> 4), nbt);
+        BlockEntityFlowerPot flowerPot = (BlockEntityFlowerPot) BlockEntity.createBlockEntity(BlockEntity.FLOWER_POT, getLevel().getChunk((int) block.x >> 4, (int) block.z >> 4), nbt);
+        if (flowerPot == null) return false;
 
         this.getLevel().setBlock(block, this, true, true);
         return true;
@@ -113,7 +111,7 @@ public class BlockFlowerPot extends BlockFlowable {
         blockEntity.namedTag.putShort("item", itemID);
         blockEntity.namedTag.putInt("data", itemMeta);
 
-        this.meta = 1;
+        this.setDamage(1);
         this.getLevel().setBlock(this, this, true);
         ((BlockEntityFlowerPot) blockEntity).spawnToAll();
 
@@ -150,7 +148,32 @@ public class BlockFlowerPot extends BlockFlowable {
 
     @Override
     protected AxisAlignedBB recalculateBoundingBox() {
-        return new AxisAlignedBB(this.x + 0.3125, this.y, this.z + 0.3125, this.x + 0.6875, this.y + 0.375, this.z + 0.6875);
+        return this;
+    }
+
+    @Override
+    public double getMinX() {
+        return this.x + 0.3125;
+    }
+
+    @Override
+    public double getMinZ() {
+        return this.z + 0.3125;
+    }
+
+    @Override
+    public double getMaxX() {
+        return this.x + 0.6875;
+    }
+
+    @Override
+    public double getMaxY() {
+        return this.y + 0.375;
+    }
+
+    @Override
+    public double getMaxZ() {
+        return this.z + 0.6875;
     }
 
     @Override

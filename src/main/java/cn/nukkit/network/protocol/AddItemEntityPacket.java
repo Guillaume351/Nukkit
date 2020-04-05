@@ -3,11 +3,13 @@ package cn.nukkit.network.protocol;
 import cn.nukkit.entity.data.EntityMetadata;
 import cn.nukkit.item.Item;
 import cn.nukkit.utils.Binary;
+import lombok.ToString;
 
 /**
  * author: MagicDroidX
  * Nukkit Project
  */
+@ToString
 public class AddItemEntityPacket extends DataPacket {
     public static final byte NETWORK_ID = ProtocolInfo.ADD_ITEM_ENTITY_PACKET;
 
@@ -26,6 +28,7 @@ public class AddItemEntityPacket extends DataPacket {
     public float speedY;
     public float speedZ;
     public EntityMetadata metadata = new EntityMetadata();
+    public boolean isFromFishing = false;
 
     @Override
     public void decode() {
@@ -41,5 +44,6 @@ public class AddItemEntityPacket extends DataPacket {
         this.putVector3f(this.x, this.y, this.z);
         this.putVector3f(this.speedX, this.speedY, this.speedZ);
         this.put(Binary.writeMetadata(metadata));
+        this.putBoolean(this.isFromFishing);
     }
 }

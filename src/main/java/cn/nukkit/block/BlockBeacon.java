@@ -3,10 +3,12 @@ package cn.nukkit.block;
 import cn.nukkit.Player;
 import cn.nukkit.blockentity.BlockEntity;
 import cn.nukkit.blockentity.BlockEntityBeacon;
+import cn.nukkit.inventory.BeaconInventory;
 import cn.nukkit.item.Item;
 import cn.nukkit.item.ItemTool;
 import cn.nukkit.math.BlockFace;
 import cn.nukkit.nbt.tag.CompoundTag;
+import cn.nukkit.utils.BlockColor;
 
 /**
  * author: Angelic47 Nukkit Project
@@ -14,11 +16,6 @@ import cn.nukkit.nbt.tag.CompoundTag;
 public class BlockBeacon extends BlockTransparent {
 
     public BlockBeacon() {
-        this(0);
-    }
-
-    public BlockBeacon(int meta) {
-        super(meta);
     }
 
     @Override
@@ -58,8 +55,25 @@ public class BlockBeacon extends BlockTransparent {
 
     @Override
     public boolean onActivate(Item item, Player player) {
-        // TODO handle GUI
-        //Server.getInstance().getLogger().info("BlockBeacon.onActivate called");
+        if (player != null) {
+            BlockEntity t = this.getLevel().getBlockEntity(this);
+            BlockEntityBeacon beacon;
+            if (t instanceof BlockEntityBeacon) {
+                beacon = (BlockEntityBeacon) t;
+            } else {
+                CompoundTag nbt = new CompoundTag("")
+                        .putString("id", BlockEntity.BEACON)
+                        .putInt("x", (int) this.x)
+                        .putInt("y", (int) this.y)
+                        .putInt("z", (int) this.z);
+                beacon = (BlockEntityBeacon) BlockEntity.createBlockEntity(BlockEntity.BEACON, this.getLevel().getChunk((int) (this.x) >> 4, (int) (this.z) >> 4), nbt);
+                if (beacon == null) {
+                    return false;
+                }
+            }
+
+            player.addWindow(new BeaconInventory(player.getUIInventory(), this), Player.BEACON_WINDOW_ID);
+        }
         return true;
     }
 
@@ -73,7 +87,10 @@ public class BlockBeacon extends BlockTransparent {
                     .putInt("x", (int) this.x)
                     .putInt("y", (int) this.y)
                     .putInt("z", (int) this.z);
-            new BlockEntityBeacon(this.level.getChunk((int) this.x >> 4, (int) this.z >> 4), nbt);
+            BlockEntityBeacon beacon = (BlockEntityBeacon) BlockEntity.createBlockEntity(BlockEntity.BEACON, this.getLevel().getChunk((int) (this.x) >> 4, (int) (this.z) >> 4), nbt);
+            if (beacon == null) {
+                return false;
+            }
         }
 
         return blockSuccess;
@@ -82,5 +99,10 @@ public class BlockBeacon extends BlockTransparent {
     @Override
     public boolean canBePushed() {
         return false;
+    }
+
+    @Override
+    public BlockColor getColor() {
+        return BlockColor.DIAMOND_BLOCK_COLOR;
     }
 }

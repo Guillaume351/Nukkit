@@ -16,11 +16,6 @@ import cn.nukkit.utils.BlockColor;
 public class BlockMycelium extends BlockSolid {
 
     public BlockMycelium() {
-        this(0);
-    }
-
-    public BlockMycelium(int meta) {
-        super(0);
     }
 
     @Override
@@ -51,7 +46,7 @@ public class BlockMycelium extends BlockSolid {
     @Override
     public Item[] getDrops(Item item) {
         return new Item[]{
-                new ItemBlock(new BlockDirt())
+                new ItemBlock(Block.get(BlockID.DIRT))
         };
     }
 
@@ -64,9 +59,9 @@ public class BlockMycelium extends BlockSolid {
             y = random.nextRange((int) y - 1, (int) y + 1);
             z = random.nextRange((int) z - 1, (int) z + 1);
             Block block = this.getLevel().getBlock(new Vector3(x, y, z));
-            if (block.getId() == Block.DIRT) {
-                if (block.up() instanceof BlockTransparent) {
-                    BlockSpreadEvent ev = new BlockSpreadEvent(block, this, new BlockMycelium());
+            if (block.getId() == Block.DIRT && block.getDamage() == 0) {
+                if (block.up().isTransparent()) {
+                    BlockSpreadEvent ev = new BlockSpreadEvent(block, this, Block.get(BlockID.MYCELIUM));
                     Server.getInstance().getPluginManager().callEvent(ev);
                     if (!ev.isCancelled()) {
                         this.getLevel().setBlock(block, ev.getNewState());
@@ -79,6 +74,11 @@ public class BlockMycelium extends BlockSolid {
 
     @Override
     public BlockColor getColor() {
-        return BlockColor.GRASS_BLOCK_COLOR;
+        return BlockColor.PURPLE_BLOCK_COLOR;
+    }
+
+    @Override
+    public boolean canSilkTouch() {
+        return true;
     }
 }

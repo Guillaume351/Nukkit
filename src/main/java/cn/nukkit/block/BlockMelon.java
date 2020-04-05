@@ -16,11 +16,6 @@ import java.util.Random;
 public class BlockMelon extends BlockSolid {
 
     public BlockMelon() {
-        this(0);
-    }
-
-    public BlockMelon(int meta) {
-        super(0);
     }
 
     @Override
@@ -63,6 +58,11 @@ public class BlockMelon extends BlockSolid {
 
     @Override
     public BlockColor getColor() {
-        return BlockColor.FOLIAGE_BLOCK_COLOR;
+        return BlockColor.LIME_BLOCK_COLOR;
+    }
+
+    @Override
+    public boolean canSilkTouch() {
+        return true;
     }
 }

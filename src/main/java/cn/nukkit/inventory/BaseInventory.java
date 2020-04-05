@@ -2,7 +2,9 @@ package cn.nukkit.inventory;
 
 import cn.nukkit.Player;
 import cn.nukkit.Server;
-import cn.nukkit.block.BlockAir;
+import cn.nukkit.block.Block;
+import cn.nukkit.block.BlockID;
+import cn.nukkit.blockentity.BlockEntity;
 import cn.nukkit.entity.Entity;
 import cn.nukkit.event.entity.EntityInventoryChangeEvent;
 import cn.nukkit.event.inventory.InventoryOpenEvent;
@@ -97,7 +99,7 @@ public abstract class BaseInventory implements Inventory {
 
     @Override
     public Item getItem(int index) {
-        return this.slots.containsKey(index) ? this.slots.get(index).clone() : new ItemBlock(new BlockAir(), null, 0);
+        return this.slots.containsKey(index) ? this.slots.get(index).clone() : new ItemBlock(Block.get(BlockID.AIR), null, 0);
     }
 
     @Override
@@ -144,7 +146,7 @@ public abstract class BaseInventory implements Inventory {
         if (index < 0 || index >= this.size) {
             return false;
         } else if (item.getId() == 0 || item.getCount() <= 0) {
-            return this.clear(index);
+            return this.clear(index, send);
         }
 
         InventoryHolder holder = this.getHolder();
@@ -157,6 +159,10 @@ public abstract class BaseInventory implements Inventory {
             }
 
             item = ev.getNewItem();
+        }
+
+        if (holder instanceof BlockEntity) {
+            ((BlockEntity) holder).setDirty();
         }
 
         Item old = this.getItem(index);
@@ -231,6 +237,16 @@ public abstract class BaseInventory implements Inventory {
         }
 
         return -1;
+    }
+
+    @Override
+    public void decreaseCount(int slot) {
+        Item item = this.getItem(slot);
+
+        if (item.getCount() > 0) {
+            item.count--;
+            this.setItem(slot, item);
+        }
     }
 
     @Override
@@ -310,7 +326,7 @@ public abstract class BaseInventory implements Inventory {
             }
         }
 
-        return itemSlots.stream().toArray(Item[]::new);
+        return itemSlots.toArray(new Item[0]);
     }
 
     @Override
@@ -346,13 +362,13 @@ public abstract class BaseInventory implements Inventory {
             }
         }
 
-        return itemSlots.stream().toArray(Item[]::new);
+        return itemSlots.toArray(new Item[0]);
     }
 
     @Override
     public boolean clear(int index, boolean send) {
         if (this.slots.containsKey(index)) {
-            Item item = new ItemBlock(new BlockAir(), null, 0);
+            Item item = new ItemBlock(Block.get(BlockID.AIR), null, 0);
             Item old = this.slots.get(index);
             InventoryHolder holder = this.getHolder();
             if (holder instanceof Entity) {
@@ -363,6 +379,9 @@ public abstract class BaseInventory implements Inventory {
                     return false;
                 }
                 item = ev.getNewItem();
+            }
+            if (holder instanceof BlockEntity) {
+                ((BlockEntity) holder).setDirty();
             }
 
             if (item.getId() != Item.AIR) {
@@ -507,7 +526,7 @@ public abstract class BaseInventory implements Inventory {
 
     @Override
     public void sendContents(Collection<Player> players) {
-        this.sendContents(players.stream().toArray(Player[]::new));
+        this.sendContents(players.toArray(new Player[0]));
     }
 
     @Override
@@ -534,7 +553,7 @@ public abstract class BaseInventory implements Inventory {
 
     @Override
     public void sendSlot(int index, Collection<Player> players) {
-        this.sendSlot(index, players.stream().toArray(Player[]::new));
+        this.sendSlot(index, players.toArray(new Player[0]));
     }
 
     @Override

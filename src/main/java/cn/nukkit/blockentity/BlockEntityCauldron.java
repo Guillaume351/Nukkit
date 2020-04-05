@@ -4,7 +4,7 @@ import cn.nukkit.block.Block;
 import cn.nukkit.level.format.FullChunk;
 import cn.nukkit.nbt.tag.CompoundTag;
 
-import java.awt.*;
+import cn.nukkit.utils.BlockColor;
 
 /**
  * author: CreeperFace
@@ -14,7 +14,10 @@ public class BlockEntityCauldron extends BlockEntitySpawnable {
 
     public BlockEntityCauldron(FullChunk chunk, CompoundTag nbt) {
         super(chunk, nbt);
+    }
 
+    @Override
+    protected void initBlockEntity() {
         if (!namedTag.contains("PotionId")) {
             namedTag.putShort("PotionId", 0xffff);
         }
@@ -22,6 +25,8 @@ public class BlockEntityCauldron extends BlockEntitySpawnable {
         if (!namedTag.contains("SplashPotion")) {
             namedTag.putByte("SplashPotion", 0);
         }
+
+        super.initBlockEntity();
     }
 
     public int getPotionId() {
@@ -45,7 +50,7 @@ public class BlockEntityCauldron extends BlockEntitySpawnable {
         namedTag.putByte("SplashPotion", value ? 1 : 0);
     }
 
-    public Color getCustomColor() {
+    public BlockColor getCustomColor() {
         if (isCustomColor()) {
             int color = namedTag.getInt("CustomColor");
 
@@ -53,7 +58,7 @@ public class BlockEntityCauldron extends BlockEntitySpawnable {
             int green = (color >> 8) & 0xff;
             int blue = (color) & 0xff;
 
-            return new Color(red, green, blue);
+            return new BlockColor(red, green, blue);
         }
 
         return null;
@@ -63,7 +68,7 @@ public class BlockEntityCauldron extends BlockEntitySpawnable {
         return namedTag.contains("CustomColor");
     }
 
-    public void setCustomColor(Color color) {
+    public void setCustomColor(BlockColor color) {
         setCustomColor(color.getRed(), color.getGreen(), color.getBlue());
     }
 

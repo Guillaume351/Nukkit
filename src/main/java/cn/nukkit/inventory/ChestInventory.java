@@ -12,6 +12,8 @@ import cn.nukkit.network.protocol.LevelSoundEventPacket;
  */
 public class ChestInventory extends ContainerInventory {
 
+    protected DoubleChestInventory doubleInventory;
+
     public ChestInventory(BlockEntityChest chest) {
         super(chest, InventoryType.CHEST);
     }
@@ -35,7 +37,7 @@ public class ChestInventory extends ContainerInventory {
 
             Level level = this.getHolder().getLevel();
             if (level != null) {
-                level.addLevelSoundEvent(LevelSoundEventPacket.SOUND_CHEST_OPEN, 1, -1, this.getHolder().add(0.5, 0.5, 0.5));
+                level.addLevelSoundEvent(this.getHolder().add(0.5, 0.5, 0.5), LevelSoundEventPacket.SOUND_CHEST_OPEN);
                 level.addChunkPacket((int) this.getHolder().getX() >> 4, (int) this.getHolder().getZ() >> 4, pk);
             }
         }
@@ -53,11 +55,28 @@ public class ChestInventory extends ContainerInventory {
 
             Level level = this.getHolder().getLevel();
             if (level != null) {
-                level.addLevelSoundEvent(LevelSoundEventPacket.SOUND_CHEST_CLOSED, 1, -1, this.getHolder().add(0.5, 0.5, 0.5));
+                level.addLevelSoundEvent(this.getHolder().add(0.5, 0.5, 0.5), LevelSoundEventPacket.SOUND_CHEST_CLOSED);
                 level.addChunkPacket((int) this.getHolder().getX() >> 4, (int) this.getHolder().getZ() >> 4, pk);
             }
         }
 
         super.onClose(who);
+    }
+
+    public void setDoubleInventory(DoubleChestInventory doubleInventory) {
+        this.doubleInventory = doubleInventory;
+    }
+
+    public DoubleChestInventory getDoubleInventory() {
+        return doubleInventory;
+    }
+
+    @Override
+    public void sendSlot(int index, Player... players) {
+        if (this.doubleInventory != null) {
+            this.doubleInventory.sendSlot(this, index, players);
+        } else {
+            super.sendSlot(index, players);
+        }
     }
 }

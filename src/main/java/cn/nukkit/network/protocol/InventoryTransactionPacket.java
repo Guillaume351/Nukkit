@@ -5,7 +5,9 @@ import cn.nukkit.inventory.transaction.data.TransactionData;
 import cn.nukkit.inventory.transaction.data.UseItemData;
 import cn.nukkit.inventory.transaction.data.UseItemOnEntityData;
 import cn.nukkit.network.protocol.types.NetworkInventoryAction;
+import lombok.ToString;
 
+@ToString
 public class InventoryTransactionPacket extends DataPacket {
 
     public static final int TYPE_NORMAL = 0;
@@ -34,6 +36,12 @@ public class InventoryTransactionPacket extends DataPacket {
     public int transactionType;
     public NetworkInventoryAction[] actions;
     public TransactionData transactionData;
+
+    /**
+     * NOTE: THIS FIELD DOES NOT EXIST IN THE PROTOCOL, it's merely used for convenience for PocketMine-MP to easily
+     * determine whether we're doing a crafting transaction.
+     */
+    public boolean isCraftingPart = false;
 
     @Override
     public byte pid() {
@@ -64,6 +72,7 @@ public class InventoryTransactionPacket extends DataPacket {
                 this.putSlot(useItemData.itemInHand);
                 this.putVector3f(useItemData.playerPos.asVector3f());
                 this.putVector3f(useItemData.clickPos);
+                this.putUnsignedVarInt(useItemData.blockRuntimeId);
                 break;
             case TYPE_USE_ITEM_ON_ENTITY:
                 UseItemOnEntityData useItemOnEntityData = (UseItemOnEntityData) this.transactionData;
@@ -72,8 +81,8 @@ public class InventoryTransactionPacket extends DataPacket {
                 this.putUnsignedVarInt(useItemOnEntityData.actionType);
                 this.putVarInt(useItemOnEntityData.hotbarSlot);
                 this.putSlot(useItemOnEntityData.itemInHand);
-                this.putVector3f(useItemOnEntityData.vector1.asVector3f());
-                this.putVector3f(useItemOnEntityData.vector2.asVector3f());
+                this.putVector3f(useItemOnEntityData.playerPos.asVector3f());
+                this.putVector3f(useItemOnEntityData.clickPos.asVector3f());
                 break;
             case TYPE_RELEASE_ITEM:
                 ReleaseItemData releaseItemData = (ReleaseItemData) this.transactionData;
@@ -112,6 +121,7 @@ public class InventoryTransactionPacket extends DataPacket {
                 itemData.itemInHand = this.getSlot();
                 itemData.playerPos = this.getVector3f().asVector3();
                 itemData.clickPos = this.getVector3f();
+                itemData.blockRuntimeId = (int) this.getUnsignedVarInt();
 
                 this.transactionData = itemData;
                 break;
@@ -122,8 +132,8 @@ public class InventoryTransactionPacket extends DataPacket {
                 useItemOnEntityData.actionType = (int) this.getUnsignedVarInt();
                 useItemOnEntityData.hotbarSlot = this.getVarInt();
                 useItemOnEntityData.itemInHand = this.getSlot();
-                useItemOnEntityData.vector1 = this.getVector3f().asVector3();
-                useItemOnEntityData.vector2 = this.getVector3f().asVector3();
+                useItemOnEntityData.playerPos = this.getVector3f().asVector3();
+                useItemOnEntityData.clickPos = this.getVector3f().asVector3();
 
                 this.transactionData = useItemOnEntityData;
                 break;

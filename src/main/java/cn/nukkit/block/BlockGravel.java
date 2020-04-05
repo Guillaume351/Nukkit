@@ -3,7 +3,6 @@ package cn.nukkit.block;
 import cn.nukkit.item.Item;
 import cn.nukkit.item.ItemFlint;
 import cn.nukkit.item.ItemTool;
-import cn.nukkit.utils.BlockColor;
 
 import java.util.Random;
 
@@ -15,11 +14,6 @@ public class BlockGravel extends BlockFallable {
 
 
     public BlockGravel() {
-        this(0);
-    }
-
-    public BlockGravel(int meta) {
-        super(0);
     }
 
     @Override
@@ -59,10 +53,9 @@ public class BlockGravel extends BlockFallable {
             };
         }
     }
-
+    
     @Override
-    public BlockColor getColor() {
-        return BlockColor.SAND_BLOCK_COLOR;
+    public boolean canSilkTouch() {
+        return true;
     }
-
 }

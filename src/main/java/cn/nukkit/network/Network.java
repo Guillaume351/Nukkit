@@ -4,10 +4,16 @@ import cn.nukkit.Nukkit;
 import cn.nukkit.Player;
 import cn.nukkit.Server;
 import cn.nukkit.network.protocol.*;
-import cn.nukkit.utils.Binary;
 import cn.nukkit.utils.BinaryStream;
+import cn.nukkit.utils.Utils;
+import cn.nukkit.utils.VarInt;
 import cn.nukkit.utils.Zlib;
+import io.netty.buffer.ByteBufUtil;
+import io.netty.buffer.Unpooled;
+import lombok.extern.log4j.Log4j2;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -17,6 +23,7 @@ import java.util.Set;
  * author: MagicDroidX
  * Nukkit Project
  */
+@Log4j2
 public class Network {
 
     public static final byte CHANNEL_NONE = 0;
@@ -81,7 +88,7 @@ public class Network {
 
                 interfaz.emergencyShutdown();
                 this.unregisterInterface(interfaz);
-                this.server.getLogger().critical(this.server.getLanguage().translateString("nukkit.server.networkError", new String[]{interfaz.getClass().getName(), e.getMessage()}));
+                log.fatal(this.server.getLanguage().translateString("nukkit.server.networkError", new String[]{interfaz.getClass().getName(), Utils.getExceptionMessage(e)}));
             }
         }
     }
@@ -134,7 +141,7 @@ public class Network {
     public void processBatch(BatchPacket packet, Player player) {
         byte[] data;
         try {
-            data = Zlib.inflate(packet.payload, 64 * 1024 * 1024);
+            data = Zlib.inflate(packet.payload, 2 * 1024 * 1024); // Max 2MB
         } catch (Exception e) {
             return;
         }
@@ -143,15 +150,28 @@ public class Network {
         BinaryStream stream = new BinaryStream(data);
         try {
             List<DataPacket> packets = new ArrayList<>();
+            int count = 0;
             while (stream.offset < len) {
+                count++;
+                if (count >= 1000) {
+                    player.close("", "Illegal Batch Packet");
+                    return;
+                }
                 byte[] buf = stream.getByteArray();
 
-                DataPacket pk;
+                DataPacket pk = this.getPacketFromBuffer(buf);
 
-                if ((pk = this.getPacket(buf[0])) != null) {
-                    pk.setBuffer(buf, 3); //skip 2 more bytes
-
-                    pk.decode();
+                if (pk != null) {
+                    try {
+                        pk.decode();
+                    } catch (Exception e) {
+                        log.warn("Unable to decode {} from {}", pk.getClass().getSimpleName(), player.getName());
+                        log.throwing(e);
+                        if (log.isTraceEnabled()) {
+                            log.trace("Dumping Packet\n{}", ByteBufUtil.prettyHexDump(Unpooled.wrappedBuffer(packet.payload)));
+                        }
+                        throw e;
+                    }
 
                     packets.add(pk);
                 }
@@ -160,9 +180,8 @@ public class Network {
             processPackets(player, packets);
 
         } catch (Exception e) {
-            if (Nukkit.DEBUG > 0) {
-                this.server.getLogger().debug("BatchPacket 0x" + Binary.bytesToHexString(packet.payload));
-                this.server.getLogger().logException(e);
+            if (log.isDebugEnabled()) {
+                log.debug("Error whilst decoding batch packet", e);
             }
         }
     }
@@ -178,6 +197,14 @@ public class Network {
         packets.forEach(player::handleDataPacket);
     }
 
+    private DataPacket getPacketFromBuffer(byte[] buffer) throws IOException {
+        ByteArrayInputStream stream = new ByteArrayInputStream(buffer);
+        DataPacket pk = this.getPacket((byte) VarInt.readUnsignedVarInt(stream));
+        if (pk != null) {
+            pk.setBuffer(buffer, buffer.length - stream.available());
+        }
+        return pk;
+    }
 
     public DataPacket getPacket(byte id) {
         Class<? extends DataPacket> clazz = this.packetPool[id & 0xff];
@@ -227,6 +254,7 @@ public class Network {
         this.registerPacket(ProtocolInfo.BLOCK_ENTITY_DATA_PACKET, BlockEntityDataPacket.class);
         this.registerPacket(ProtocolInfo.BLOCK_EVENT_PACKET, BlockEventPacket.class);
         this.registerPacket(ProtocolInfo.BLOCK_PICK_REQUEST_PACKET, BlockPickRequestPacket.class);
+        this.registerPacket(ProtocolInfo.BOOK_EDIT_PACKET, BookEditPacket.class);
         this.registerPacket(ProtocolInfo.BOSS_EVENT_PACKET, BossEventPacket.class);
         this.registerPacket(ProtocolInfo.CHANGE_DIMENSION_PACKET, ChangeDimensionPacket.class);
         this.registerPacket(ProtocolInfo.CHUNK_RADIUS_UPDATED_PACKET, ChunkRadiusUpdatedPacket.class);
@@ -240,8 +268,7 @@ public class Network {
         this.registerPacket(ProtocolInfo.DISCONNECT_PACKET, DisconnectPacket.class);
         this.registerPacket(ProtocolInfo.ENTITY_EVENT_PACKET, EntityEventPacket.class);
         this.registerPacket(ProtocolInfo.ENTITY_FALL_PACKET, EntityFallPacket.class);
-        this.registerPacket(ProtocolInfo.EXPLODE_PACKET, ExplodePacket.class);
-        this.registerPacket(ProtocolInfo.FULL_CHUNK_DATA_PACKET, FullChunkDataPacket.class);
+        this.registerPacket(ProtocolInfo.FULL_CHUNK_DATA_PACKET, LevelChunkPacket.class);
         this.registerPacket(ProtocolInfo.GAME_RULES_CHANGED_PACKET, GameRulesChangedPacket.class);
         this.registerPacket(ProtocolInfo.HURT_ARMOR_PACKET, HurtArmorPacket.class);
         this.registerPacket(ProtocolInfo.INTERACT_PACKET, InteractPacket.class);
@@ -250,19 +277,19 @@ public class Network {
         this.registerPacket(ProtocolInfo.INVENTORY_TRANSACTION_PACKET, InventoryTransactionPacket.class);
         this.registerPacket(ProtocolInfo.ITEM_FRAME_DROP_ITEM_PACKET, ItemFrameDropItemPacket.class);
         this.registerPacket(ProtocolInfo.LEVEL_EVENT_PACKET, LevelEventPacket.class);
-        this.registerPacket(ProtocolInfo.LEVEL_SOUND_EVENT_PACKET, LevelSoundEventPacket.class);
+        this.registerPacket(ProtocolInfo.LEVEL_SOUND_EVENT_PACKET_V1, LevelSoundEventPacketV1.class);
         this.registerPacket(ProtocolInfo.LOGIN_PACKET, LoginPacket.class);
         this.registerPacket(ProtocolInfo.MAP_INFO_REQUEST_PACKET, MapInfoRequestPacket.class);
         this.registerPacket(ProtocolInfo.MOB_ARMOR_EQUIPMENT_PACKET, MobArmorEquipmentPacket.class);
         this.registerPacket(ProtocolInfo.MOB_EQUIPMENT_PACKET, MobEquipmentPacket.class);
         this.registerPacket(ProtocolInfo.MODAL_FORM_REQUEST_PACKET, ModalFormRequestPacket.class);
         this.registerPacket(ProtocolInfo.MODAL_FORM_RESPONSE_PACKET, ModalFormResponsePacket.class);
-        this.registerPacket(ProtocolInfo.MOVE_ENTITY_PACKET, MoveEntityPacket.class);
+        this.registerPacket(ProtocolInfo.MOVE_ENTITY_ABSOLUTE_PACKET, MoveEntityAbsolutePacket.class);
         this.registerPacket(ProtocolInfo.MOVE_PLAYER_PACKET, MovePlayerPacket.class);
         this.registerPacket(ProtocolInfo.PLAYER_ACTION_PACKET, PlayerActionPacket.class);
         this.registerPacket(ProtocolInfo.PLAYER_INPUT_PACKET, PlayerInputPacket.class);
         this.registerPacket(ProtocolInfo.PLAYER_LIST_PACKET, PlayerListPacket.class);
-        this.registerPacket(ProtocolInfo.PLAYER_HOTBAR_PACKET, PlayerListPacket.class);
+        this.registerPacket(ProtocolInfo.PLAYER_HOTBAR_PACKET, PlayerHotbarPacket.class);
         this.registerPacket(ProtocolInfo.PLAY_SOUND_PACKET, PlaySoundPacket.class);
         this.registerPacket(ProtocolInfo.PLAY_STATUS_PACKET, PlayStatusPacket.class);
         this.registerPacket(ProtocolInfo.REMOVE_ENTITY_PACKET, RemoveEntityPacket.class);
@@ -273,6 +300,7 @@ public class Network {
         this.registerPacket(ProtocolInfo.RESOURCE_PACK_DATA_INFO_PACKET, ResourcePackDataInfoPacket.class);
         this.registerPacket(ProtocolInfo.RESOURCE_PACK_CHUNK_DATA_PACKET, ResourcePackChunkDataPacket.class);
         this.registerPacket(ProtocolInfo.RESOURCE_PACK_CHUNK_REQUEST_PACKET, ResourcePackChunkRequestPacket.class);
+        this.registerPacket(ProtocolInfo.PLAYER_SKIN_PACKET, PlayerSkinPacket.class);
         this.registerPacket(ProtocolInfo.RESPAWN_PACKET, RespawnPacket.class);
         this.registerPacket(ProtocolInfo.RIDER_JUMP_PACKET, RiderJumpPacket.class);
         this.registerPacket(ProtocolInfo.SET_COMMANDS_ENABLED_PACKET, SetCommandsEnabledPacket.class);
@@ -292,7 +320,26 @@ public class Network {
         this.registerPacket(ProtocolInfo.START_GAME_PACKET, StartGamePacket.class);
         this.registerPacket(ProtocolInfo.TAKE_ITEM_ENTITY_PACKET, TakeItemEntityPacket.class);
         this.registerPacket(ProtocolInfo.TEXT_PACKET, TextPacket.class);
+        this.registerPacket(ProtocolInfo.UPDATE_ATTRIBUTES_PACKET, UpdateAttributesPacket.class);
         this.registerPacket(ProtocolInfo.UPDATE_BLOCK_PACKET, UpdateBlockPacket.class);
         this.registerPacket(ProtocolInfo.UPDATE_TRADE_PACKET, UpdateTradePacket.class);
+        this.registerPacket(ProtocolInfo.MOVE_ENTITY_DELTA_PACKET, MoveEntityDeltaPacket.class);
+        this.registerPacket(ProtocolInfo.SET_LOCAL_PLAYER_AS_INITIALIZED_PACKET, SetLocalPlayerAsInitializedPacket.class);
+        this.registerPacket(ProtocolInfo.NETWORK_STACK_LATENCY_PACKET, NetworkStackLatencyPacket.class);
+        this.registerPacket(ProtocolInfo.UPDATE_SOFT_ENUM_PACKET, UpdateSoftEnumPacket.class);
+        this.registerPacket(ProtocolInfo.NETWORK_CHUNK_PUBLISHER_UPDATE_PACKET, NetworkChunkPublisherUpdatePacket.class);
+        this.registerPacket(ProtocolInfo.AVAILABLE_ENTITY_IDENTIFIERS_PACKET, AvailableEntityIdentifiersPacket.class);
+        this.registerPacket(ProtocolInfo.LEVEL_SOUND_EVENT_PACKET_V2, LevelSoundEventPacket.class);
+        this.registerPacket(ProtocolInfo.SCRIPT_CUSTOM_EVENT_PACKET, ScriptCustomEventPacket.class);
+        this.registerPacket(ProtocolInfo.SPAWN_PARTICLE_EFFECT_PACKET, SpawnParticleEffectPacket.class);
+        this.registerPacket(ProtocolInfo.BIOME_DEFINITION_LIST_PACKET, BiomeDefinitionListPacket.class);
+        this.registerPacket(ProtocolInfo.LEVEL_SOUND_EVENT_PACKET, LevelSoundEventPacket.class);
+        this.registerPacket(ProtocolInfo.LEVEL_EVENT_GENERIC_PACKET, LevelEventGenericPacket.class);
+        this.registerPacket(ProtocolInfo.LECTERN_UPDATE_PACKET, LecternUpdatePacket.class);
+        this.registerPacket(ProtocolInfo.VIDEO_STREAM_CONNECT_PACKET, VideoStreamConnectPacket.class);
+        this.registerPacket(ProtocolInfo.CLIENT_CACHE_STATUS_PACKET, ClientCacheStatusPacket.class);
+        this.registerPacket(ProtocolInfo.MAP_CREATE_LOCKED_COPY_PACKET, MapCreateLockedCopyPacket.class);
+        this.registerPacket(ProtocolInfo.ON_SCREEN_TEXTURE_ANIMATION_PACKET, OnScreenTextureAnimationPacket.class);
+        this.registerPacket(ProtocolInfo.COMPLETED_USING_ITEM_PACKET, CompletedUsingItemPacket.class);
     }
 }

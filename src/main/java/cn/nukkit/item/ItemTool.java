@@ -12,7 +12,7 @@ import java.util.Random;
  * author: MagicDroidX
  * Nukkit Project
  */
-public abstract class ItemTool extends Item {
+public abstract class ItemTool extends Item implements ItemDurable {
     public static final int TIER_WOODEN = 1;
     public static final int TIER_GOLD = 2;
     public static final int TIER_STONE = 3;
@@ -34,17 +34,19 @@ public abstract class ItemTool extends Item {
     public static final int DURABILITY_FLINT_STEEL = 65;
     public static final int DURABILITY_SHEARS = 239;
     public static final int DURABILITY_BOW = 385;
+    public static final int DURABILITY_TRIDENT = 251;
+    public static final int DURABILITY_FISHING_ROD = 65;
 
     public ItemTool(int id) {
-        this(id, 0, 1, "Unknown");
+        this(id, 0, 1, UNKNOWN_STR);
     }
 
     public ItemTool(int id, Integer meta) {
-        this(id, meta, 1, "Unknown");
+        this(id, meta, 1, UNKNOWN_STR);
     }
 
     public ItemTool(int id, Integer meta, int count) {
-        this(id, meta, count, "Unknown");
+        this(id, meta, count, UNKNOWN_STR);
     }
 
     public ItemTool(int id, Integer meta, int count, String name) {
@@ -58,7 +60,7 @@ public abstract class ItemTool extends Item {
 
     @Override
     public boolean useOn(Block block) {
-        if (this.isUnbreakable() || !canReduceDamage()) {
+        if (this.isUnbreakable() || isDurable()) {
             return true;
         }
 
@@ -83,7 +85,7 @@ public abstract class ItemTool extends Item {
 
     @Override
     public boolean useOn(Entity entity) {
-        if (this.isUnbreakable() || !canReduceDamage()) {
+        if (this.isUnbreakable() || isDurable()) {
             return true;
         }
 
@@ -96,9 +98,9 @@ public abstract class ItemTool extends Item {
         return true;
     }
 
-    private boolean canReduceDamage() {
+    private boolean isDurable() {
         if (!hasEnchantments()) {
-            return true;
+            return false;
         }
 
         Enchantment durability = getEnchantment(Enchantment.ID_DURABILITY);
